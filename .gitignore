@@ -7,4 +7,5 @@ data/exact_match_experiment/embeddings/*
 results/*
 logs/*.out
 logs/*.err
+wandb/*
 

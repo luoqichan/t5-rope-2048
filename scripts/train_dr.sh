@@ -11,7 +11,7 @@
 eval "$(conda shell.bash hook)"
 conda activate openmatch
 
-DATA_PATH="."
+DATA_PATH="/data/user_data/luoqic/t5-rope-data"
 
 split=documents
 text_length=2048
@@ -25,40 +25,40 @@ corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
 negatives=$DATA_PATH/data/marco_documents_processed/train.negatives.tsv
 
 initial_model=$1
-trained_model_name=t5-base-marco-$split-$text_length
+trained_model_name=t5-base-marco-$split-$text_length-self-hn-1-self-hn-2
 
 train_data_folder=$DATA_PATH/data/training_data/$trained_model_name
 mkdir -p $train_data_folder
 
-echo "########################################"
-echo "Building initial data"
-echo "########################################"
+# echo "########################################"
+# echo "Building initial data"
+# echo "########################################"
 
-python OpenMatch/scripts/msmarco/build_train.py \
-   --tokenizer_name $initial_model \
-   --negative_file $negatives  \
-   --qrels $train_qrels  \
-   --queries $train_queries  \
-   --collection $corpus \
-   --truncate $text_length \
-   --save_to $train_data_folder  \
-   --doc_template "Title: <title> Text: <text>" \
-   --n_sample 9
+# python OpenMatch/scripts/msmarco/build_train.py \
+#    --tokenizer_name $initial_model \
+#    --negative_file $negatives  \
+#    --qrels $train_qrels  \
+#    --queries $train_queries  \
+#    --collection $corpus \
+#    --truncate $text_length \
+#    --save_to $train_data_folder  \
+#    --doc_template "Title: <title> Text: <text>" \
+#    --n_sample 9
 
 
-cat $train_data_folder/split*.jsonl > $train_data_folder/full.jsonl
-rm $train_data_folder/split*.jsonl
+# cat $train_data_folder/split*.jsonl > $train_data_folder/full.jsonl
+# rm $train_data_folder/split*.jsonl
 
-line_count=$(wc -l $train_data_folder/full.jsonl | awk '{print $1}')
-n_val=500
-n_train=$((line_count - n_val))
+# line_count=$(wc -l $train_data_folder/full.jsonl | awk '{print $1}')
+# n_val=500
+# n_train=$((line_count - n_val))
 
-echo $n_train
+# echo $n_train
 
-tail -n $n_val $train_data_folder/full.jsonl > $train_data_folder/val.jsonl
-head -n $n_train $train_data_folder/full.jsonl > $train_data_folder/train.jsonl
+# tail -n $n_val $train_data_folder/full.jsonl > $train_data_folder/val.jsonl
+# head -n $n_train $train_data_folder/full.jsonl > $train_data_folder/train.jsonl
 
-rm $train_data_folder/full.jsonl
+# rm $train_data_folder/full.jsonl
 
 echo "########################################"
 echo "Train + HN sampling loop - 4 episodes"
@@ -68,7 +68,7 @@ train_data=$train_data_folder/train.jsonl
 valid_data=$train_data_folder/val.jsonl
 output_path=$DATA_PATH/models/$trained_model_name
 
-for ((i = 1; i <= num_episodes; i++)); do
+for ((i = 3; i <= num_episodes; i++)); do
 
     accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 OpenMatch/src/openmatch/driver/train_dr.py  \
         --output_dir $output_path \
