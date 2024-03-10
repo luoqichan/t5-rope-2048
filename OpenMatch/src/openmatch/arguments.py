@@ -164,6 +164,11 @@ class DataArguments:
         metadata={"help": "Whether to encode the query and passage as a text pair"}
     )
 
+    cluster_negs: bool = field(
+        default=True,
+        metadata={"help": "Whether or not cluster negatives is included in training."}
+    )
+
 
 @dataclass
 class DRTrainingArguments(TrainingArguments):

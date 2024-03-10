@@ -132,6 +132,7 @@ class DRTrainDataset(TrainDatasetBase):
             group_negatives = example['negatives']
 
             if self.data_args.cluster_negs: 
+                print("CLUSTER NEGATIVES")
                 group_cluster_negatives = example['cluster_negatives']
 
             if self.data_args.positive_passage_no_shuffle or hashed_seed is None:
