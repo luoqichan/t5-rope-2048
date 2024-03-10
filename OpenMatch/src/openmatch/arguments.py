@@ -114,9 +114,17 @@ class DataArguments:
     data_dir: str = field(
         default=None, metadata={"help": "Path to BEIR data directory"}
     )
+
+    cluster_negs: bool = field(
+        default=True,
+        metadata={"help": "Whether or not cluster negatives is included in training."}
+    )
+
     train_n_passages: int = field(default=8)
+
     positive_passage_no_shuffle: bool = field(
         default=False, metadata={"help": "always use the first positive passage"})
+    
     negative_passage_no_shuffle: bool = field(
         default=False, metadata={"help": "always use the first negative passages"})
 
@@ -164,10 +172,6 @@ class DataArguments:
         metadata={"help": "Whether to encode the query and passage as a text pair"}
     )
 
-    cluster_negs: bool = field(
-        default=True,
-        metadata={"help": "Whether or not cluster negatives is included in training."}
-    )
 
 
 @dataclass
