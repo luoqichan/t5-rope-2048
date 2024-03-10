@@ -131,6 +131,9 @@ class DRTrainDataset(TrainDatasetBase):
             group_positives = example['positives']
             group_negatives = example['negatives']
 
+            if self.data_args.cluster_negs: 
+                group_cluster_negatives = example['cluster_negatives']
+
             if self.data_args.positive_passage_no_shuffle or hashed_seed is None:
                 pos_psg = group_positives[0]
             else:
@@ -143,7 +146,12 @@ class DRTrainDataset(TrainDatasetBase):
                 for pos in pos_psg:
                     encoded_passages.append(self.create_one_example(pos))
 
-            negative_size = self.data_args.train_n_passages - 1
+            if self.data_args.cluster_negs: 
+                negative_size = self.data_args.train_n_passages - 1 // 2
+                cluster_negative_size = self.data_args.train_n_passages - 1 - negative_size
+            else:
+                negative_size = self.data_args.train_n_passages - 1
+
             if len(group_negatives) < negative_size:
                 if hashed_seed is not None:
                     negs = random.choices(group_negatives, k=negative_size)
@@ -163,6 +171,7 @@ class DRTrainDataset(TrainDatasetBase):
                 negs = negs * 2
                 negs = negs[_offset: _offset + negative_size]
 
+
             if not self.maxp and not self.fusion:
                 for neg_psg in negs:
                     encoded_passages.append(self.create_one_example(neg_psg))
@@ -170,6 +179,35 @@ class DRTrainDataset(TrainDatasetBase):
                 for neg_psg in negs:
                     for neg in neg_psg:
                         encoded_passages.append(self.create_one_example(neg))
+
+            if self.data_args.cluster_negs:
+                if len(group_cluster_negatives) < cluster_negative_size:
+                    if hashed_seed is not None:
+                        c_negs = random.choices(group_cluster_negatives, k=cluster_negative_size)
+                    else:
+                        c_negs = [x for x in group_cluster_negatives]
+                        c_negs = c_negs * 2
+                        c_negs = c_negs[:cluster_negative_size]
+                elif self.data_args.train_n_passages == 1:
+                    c_negs = []
+                elif self.data_args.negative_passage_no_shuffle:
+                    c_negs = group_cluster_negatives[:cluster_negative_size]
+                else:
+                    _offset = epoch * cluster_negative_size % len(group_cluster_negatives)
+                    c_negs = [x for x in group_cluster_negatives]
+                    if hashed_seed is not None:
+                        random.Random(hashed_seed).shuffle(c_negs)
+                    c_negs = c_negs * 2
+                    c_negs = c_negs[_offset: _offset + cluster_negative_size]
+
+                if not self.maxp and not self.fusion:
+                    for c_neg_psg in c_negs:
+                        encoded_passages.append(self.create_one_example(c_neg_psg))
+                else:
+                    for c_neg_psg in c_negs:
+                        for c_neg in c_neg_psg:
+                            encoded_passages.append(self.create_one_example(c_neg))
+
 
             if not self.maxp and not self.fusion:
                 assert len(encoded_passages) == self.data_args.train_n_passages
