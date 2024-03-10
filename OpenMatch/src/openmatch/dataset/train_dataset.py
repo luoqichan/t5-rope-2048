@@ -183,6 +183,107 @@ class DRTrainDataset(TrainDatasetBase):
 
         return process_fn
 
+class BKTTrainDataset(TrainDatasetBase):
+
+    def create_one_example(self, text_encoding: List[int], is_query=False) -> BatchEncoding:
+        item = self.tokenizer.encode_plus(
+            text_encoding,
+            truncation='only_first',
+            max_length=self.data_args.q_max_len if is_query else self.data_args.p_max_len,
+            padding=False,
+            return_attention_mask=False,
+            return_token_type_ids=False,
+        )
+        return item
+
+    def get_process_fn(self, epoch, hashed_seed):
+
+        def process_fn(example):
+            qry = example['query']
+            encoded_query = self.create_one_example(qry, is_query=True)
+            encoded_passages = []
+            cluster_encoded_passages = []
+            group_positives = example['positives']
+            group_negatives = example['negatives']
+            group_cluster_negatives = example['cluster_negatives']
+
+            if self.data_args.positive_passage_no_shuffle or hashed_seed is None:
+                pos_psg = group_positives[0]
+            else:
+                pos_psg = group_positives[(
+                    hashed_seed + epoch) % len(group_positives)]
+                
+            pos_encoded_passage = self.create_one_example(pos_psg)
+            encoded_passages.append(pos_encoded_passage)
+            cluster_encoded_passages.append(pos_encoded_passage)
+
+            negative_size = self.data_args.train_n_passages - 1
+            if len(group_negatives) < negative_size:
+                if hashed_seed is not None:
+                    negs = random.choices(group_negatives, k=negative_size)
+                    cnegs = random.choices(group_cluster_negatives, k=negative_size)
+                else:
+                    negs = [x for x in group_negatives]
+                    negs = negs * 2
+                    negs = negs[:negative_size]
+
+                    cnegs = [x for x in group_cluster_negatives]
+                    cnegs = cnegs * 2
+                    cnegs = cnegs[:negative_size]
+
+            elif self.data_args.train_n_passages == 1:
+                negs = []
+                cnegs = []
+
+            elif self.data_args.negative_passage_no_shuffle:
+                negs = group_negatives[:negative_size]
+                cnegs = group_cluster_negatives[:negative_size]
+
+            else:
+                _offset = epoch * negative_size % len(group_negatives)
+                negs = [x for x in group_negatives]
+                if hashed_seed is not None:
+                    random.Random(hashed_seed).shuffle(negs)
+                negs = negs * 2
+                negs = negs[_offset: _offset + negative_size]
+
+                _offset = epoch * negative_size % len(group_cluster_negatives)
+                cnegs = [x for x in group_cluster_negatives]
+                if hashed_seed is not None:
+                    random.Random(hashed_seed).shuffle(cnegs)
+                cnegs = cnegs * 2
+                cnegs = cnegs[_offset: _offset + negative_size]
+
+            if not self.maxp and not self.fusion:
+                for neg_psg in negs:
+                    encoded_passages.append(self.create_one_example(neg_psg))
+
+                for cneg_psg in cnegs: 
+                    cluster_encoded_passages.append(self.create_one_example(cneg_psg))
+                
+            else:
+                # add hard negatives
+                for neg_psg in negs:
+                    for neg in neg_psg:
+                        encoded_passages.append(self.create_one_example(neg))
+
+                # add cluster negatives
+                for cneg_psg in cnegs: 
+                    for neg in cneg_psg:
+                        cluster_encoded_passages.append(self.create_one_example(neg))
+
+            if not self.maxp and not self.fusion:
+                assert len(encoded_passages) == self.data_args.train_n_passages 
+            elif self.maxp:
+                assert len(encoded_passages) == self.data_args.train_n_passages * self.maxp
+            elif self.fusion:
+                assert len(encoded_passages) == self.data_args.train_n_passages * self.fusion
+
+            # Avoid name conflict with query in the original dataset
+            return {"query_": encoded_query, "passages": encoded_passages, "c_passages": cluster_encoded_passages}
+
+        return process_fn
+
 
 class StreamDRTrainDataset(StreamTrainDatasetMixin, DRTrainDataset):
     pass
@@ -191,6 +292,11 @@ class StreamDRTrainDataset(StreamTrainDatasetMixin, DRTrainDataset):
 class MappingDRTrainDataset(MappingTrainDatasetMixin, DRTrainDataset):
     pass
 
+class MappingBKTTrainDataset(MappingTrainDatasetMixin, BKTTrainDataset):
+    pass
+
+class StreamBKTTrainDataset(StreamTrainDatasetMixin, BKTTrainDataset):
+    pass
 
 class DRPretrainDataset(TrainDatasetBase):
 

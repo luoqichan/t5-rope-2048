@@ -113,8 +113,8 @@ class DRTrainer(Trainer):
                 query, passage, score = inputs
                 outputs = model(query=query, passage=passage, score=score)
         else:
-            query, passage = inputs
-            outputs = model(query=query, passage=passage)
+            query, passage, c_passage = inputs
+            outputs = model(query=query, passage=passage, c_passage=c_passage)
         return (outputs.loss, outputs) if return_outputs else outputs.loss
 
     def training_step(self, *args):
@@ -163,8 +163,8 @@ class GCDenseTrainer(DRTrainer):
 
     def training_step(self, model, inputs) -> torch.Tensor:
         model.train()
-        queries, passages = self._prepare_inputs(inputs)
-        queries, passages = {'query': queries}, {'passage': passages}
+        queries, passages, c_passages = self._prepare_inputs(inputs)
+        queries, passages, c_passages = {'query': queries}, {'passage': passages}, {'c_passage': c_passages}
 
 
         _distributed = self.args.local_rank > -1

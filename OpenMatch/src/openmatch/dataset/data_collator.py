@@ -26,11 +26,14 @@ class QPCollator(DataCollatorWithPadding):
     def __call__(self, features):
         qq = [f["query_"] for f in features]
         dd = [f["passages"] for f in features]
+        cc = [f["c_passages"] for f in features]
 
         if isinstance(qq[0], list):
             qq = sum(qq, [])
         if isinstance(dd[0], list):
             dd = sum(dd, [])
+        if isinstance(cc[0], list):
+            cc = sum(cc, [])
 
         q_collated = self.tokenizer.pad(
             qq,
@@ -45,11 +48,21 @@ class QPCollator(DataCollatorWithPadding):
             return_tensors="pt",
         )
 
+        c_collated = self.tokenizer.pad(
+            cc, 
+            padding='max_length',
+            max_length=self.max_p_len,
+            return_tensors="pt"
+        )
+
         if self.fusion:
             d_collated['input_ids'] = concatenate_tensors_gradcache_fusion(d_collated['input_ids'], self.fusion)
             d_collated['attention_mask'] = concatenate_tensors_gradcache_fusion(d_collated['attention_mask'], self.fusion)
 
-        return q_collated, d_collated
+            c_collated['input_ids'] = concatenate_tensors_gradcache_fusion(c_collated['input_ids'], self.fusion)
+            c_collated['attention_mask'] = concatenate_tensors_gradcache_fusion(c_collated['attention_mask'], self.fusion)
+
+        return q_collated, d_collated, c_collated
 
 
 @dataclass

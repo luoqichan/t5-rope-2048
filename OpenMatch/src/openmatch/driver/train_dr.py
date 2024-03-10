@@ -82,7 +82,9 @@ def main():
         delta_model.freeze_module(set_state_dict=True)
         logger.info("Using param efficient method: %s", model_args.param_efficient_method)
 
-    train_dataset_cls = MappingDRTrainDataset if training_args.use_mapping_dataset else StreamDRTrainDataset
+    # train_dataset_cls = MappingDRTrainDataset if training_args.use_mapping_dataset else StreamDRTrainDataset
+    train_dataset_cls = MappingBKTTrainDataset if training_args.use_mapping_dataset else StreamDRTrainDataset
+
     train_dataset = train_dataset_cls(
         tokenizer, 
         data_args, 

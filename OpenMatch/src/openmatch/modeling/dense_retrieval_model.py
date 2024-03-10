@@ -17,6 +17,8 @@ from transformers import (AutoConfig, AutoModel, BatchEncoding,
                           PreTrainedModel, T5EncoderModel)
 from transformers.modeling_outputs import ModelOutput
 
+import wandb
+
 from ..arguments import DataArguments
 from ..arguments import DRTrainingArguments as TrainingArguments
 from ..arguments import ModelArguments
@@ -35,6 +37,8 @@ class DROutput(ModelOutput):
     p_reps: Tensor = None
     loss: Tensor = None
     scores: Tensor = None
+    cn_loss: Tensor = None
+    hn_loss: Tensor = None
 
 
 class DRModel(nn.Module):
@@ -102,6 +106,7 @@ class DRModel(nn.Module):
             self,
             query: Dict[str, Tensor] = None,
             passage: Dict[str, Tensor] = None,
+            c_passage: Dict[str, Tensor] = None,
             positive: Dict[str, Tensor] = None,
             negative: Dict[str, Tensor] = None,
             score: Tensor = None,
@@ -142,6 +147,9 @@ class DRModel(nn.Module):
 
             p_hidden, p_reps = self.encode_passage(passage, self.fusion)
 
+            if c_passage is not None:
+                c_hidden, c_reps = self.encode_passags(c_passage, self.fusion)
+
             if q_reps is None or p_reps is None:
                 return DROutput(
                     q_reps=q_reps,
@@ -152,6 +160,9 @@ class DRModel(nn.Module):
             if self.train_args.negatives_x_device:
                 q_reps = self.dist_gather_tensor(q_reps)
                 p_reps = self.dist_gather_tensor(p_reps)
+
+                if c_reps is not None:
+                    c_reps = self.dist_gather_tensor(c_reps)
 
             effective_bsz = self.train_args.per_device_train_batch_size * self.world_size \
                 if self.train_args.negatives_x_device \
@@ -171,10 +182,24 @@ class DRModel(nn.Module):
 
             loss = self.loss_fn(scores, target)
 
+
+            cn_scores = torch.matmul(q_reps, c_reps.transpose(0, 1))
+            cn_loss = self.loss_fn(cn_scores, target)
+
+            hn_loss = loss 
+            loss += cn_loss
+
             if self.training and self.train_args.negatives_x_device:
                 loss = loss * self.world_size  # counter average weight reduction
+                hn_loss = hn_loss * self.world_size
+                cn_loss = cn_loss * self.world_size
+
+            wandb.log({"hn_loss": hn_loss, "cn_loss": cn_loss}, commit=False)
+
             return DROutput(
                 loss=loss,
+                hn_loss=hn_loss,
+                cn_loss=cn_loss, 
                 scores=scores,
                 q_reps=q_reps,
                 p_reps=p_reps
