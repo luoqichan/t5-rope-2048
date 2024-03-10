@@ -24,15 +24,14 @@ with open(f"{pdir}/full.cn.jsonl", "r") as cn:
     for i in tqdm(cn): 
         line = json.loads(i)
         k = "-".join([str(x) for x in line["query"]])
-        combined_negatives[k]["cluster_negatives"] = line["negatives"]
+        combined_negatives[k]["negatives"][5:] = line["negatives"][:4]
 
 
 print("Writing and saving to file...")
-with open(f"{pdir}/full.combined.jsonl", "w") as wf:
+with open(f"{pdir}/full.collated.jsonl", "w") as wf:
     for _, dat in tqdm(combined_negatives.items()):
-        if "cluster_negatives" in dat.keys():
-            json.dump(dat, wf)
-            wf.write("\n")
+        json.dump(dat, wf)
+        wf.write("\n")
 
 
 
