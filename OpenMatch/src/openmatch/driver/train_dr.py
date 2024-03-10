@@ -7,7 +7,8 @@ import sys
 from openmatch.arguments import DataArguments
 from openmatch.arguments import DRTrainingArguments as TrainingArguments
 from openmatch.arguments import ModelArguments
-from openmatch.dataset import QPCollator, StreamDRTrainDataset, MappingDRTrainDataset
+# from openmatch.dataset import QPCollator, StreamDRTrainDataset, MappingDRTrainDataset
+from openmatch.dataset import QPCollator, StreamBKTTrainDataset, MappingBKTTrainDataset
 from openmatch.modeling import DRModel
 from openmatch.trainer import DRTrainer as Trainer
 from openmatch.trainer import GCDenseTrainer
@@ -83,7 +84,7 @@ def main():
         logger.info("Using param efficient method: %s", model_args.param_efficient_method)
 
     # train_dataset_cls = MappingDRTrainDataset if training_args.use_mapping_dataset else StreamDRTrainDataset
-    train_dataset_cls = MappingBKTTrainDataset if training_args.use_mapping_dataset else StreamDRTrainDataset
+    train_dataset_cls = MappingBKTTrainDataset if training_args.use_mapping_dataset else StreamBKTTrainDataset
 
     train_dataset = train_dataset_cls(
         tokenizer, 

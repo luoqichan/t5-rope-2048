@@ -11,20 +11,19 @@
 eval "$(conda shell.bash hook)"
 conda activate openmatch
 
-%env WANDB_PROJECT=t5-rope-bkt
 
 # initial_model=$1
 
 split=documents
 text_length=2048
-n_gpus=4
+n_gpus=2
 # num_episodes=4
 DATA_PATH=/data/user_data/luoqic/t5-rope-data
 train_qrels=$DATA_PATH/data/marco_documents_processed/qrels.train.tsv
 train_queries=$DATA_PATH/data/marco_documents_processed/train.query.txt
 corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
 
-initial_model=t5-rope-bkt-warmup
+initial_model=$DATA_PATH/models/t5-rope-2048-marco-bkt
 train_data_folder=$DATA_PATH/data/training_data/t5-rope-bkt-warmup
 train_data=$train_data_folder/train.jsonl
 valid_data=$train_data_folder/val.jsonl
@@ -38,7 +37,7 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --do_train \
     --save_steps 125  \
     --eval_steps 125  \
-    --max_steps 300   \
+    --max_steps 10   \
     --fp16 \
     --train_path $train_data  \
     --eval_path $valid_data  \
@@ -50,7 +49,7 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --p_max_len $text_length  \
     --num_train_epochs 2  \
     --report_to wandb \
-    --logging_steps 10 \
+    --logging_steps 2 \
     --run_name $trained_model_name \
     --evaluation_strategy steps \
     --dataloader_num_workers 4 \

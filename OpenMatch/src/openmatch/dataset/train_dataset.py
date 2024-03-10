@@ -288,7 +288,6 @@ class BKTTrainDataset(TrainDatasetBase):
 class StreamDRTrainDataset(StreamTrainDatasetMixin, DRTrainDataset):
     pass
 
-
 class MappingDRTrainDataset(MappingTrainDatasetMixin, DRTrainDataset):
     pass
 
