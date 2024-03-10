@@ -27,6 +27,7 @@ from .linear import LinearHead
 
 
 logger = logging.getLogger(__name__)
+import wandb
 
 
 @dataclass
@@ -158,6 +159,40 @@ class DRModel(nn.Module):
                 else self.train_args.per_device_train_batch_size
 
             scores = torch.matmul(q_reps, p_reps.transpose(0, 1))
+
+
+            num_psg = self.data_args.train_n_passages
+            num_cn = (num_psg - 1) // 2
+            num_hn = (num_psg - 1) - num_cn
+
+            hn_scores = []
+            for idx in range(0, scores.shape[1], num_psg):
+                sub = scores[:, idx:idx+num_psg]
+                pos = sub[:, 0].unsqueeze(-1)
+                negs = sub[:, 1:1+num_hn]
+
+                concat = torch.concatenate([pos, negs], axis=1)
+                hn_scores.append(concat)
+
+            hn_target = torch.arange(hn_scores.size(0), device=hn_scores.device, dtype=torch.long)
+            hn_target = hn_target * (1 + num_hn)
+            hn_loss = self.loss_fn(hn_scores, hn_target)
+
+            cn_scores = []
+            for idx in range(0, scores.shape[1], num_psg):
+                sub = scores[:, idx:idx+num_psg]
+                pos = sub[:, 0].unsqueeze(-1)
+                negs = sub[:, 1+num_hn:-1]
+
+                concat = torch.concatenate([pos, negs], axis=1)
+                cn_scores.append(concat)
+
+            cn_target = torch.arange(hn_scores.size(0), device=cn_scores.device, dtype=torch.long)
+            cn_target = cn_target * (1 + num_cn)
+            cn_loss = self.loss_fn(cn_scores, cn_target)
+
+            wandb.log({"train/hn_loss": hn_loss, "train/cn_loss": cn_loss}, commit=False)
+
 
             if self.maxp:
                 scores = torch.max(scores.view(scores.size(0),int(scores.size(1)/self.maxp), self.maxp), dim=2).values
