@@ -84,6 +84,7 @@ def main():
         delta_model.freeze_module(set_state_dict=True)
         logger.info("Using param efficient method: %s", model_args.param_efficient_method)
 
+    logging.info("Initializing DRTrainDataset")
     train_dataset_cls = MappingDRTrainDataset if training_args.use_mapping_dataset else StreamDRTrainDataset
     train_dataset = train_dataset_cls(
         tokenizer, 
@@ -93,6 +94,7 @@ def main():
         maxp=model_args.maxp,
         fusion=model_args.fusion
     )
+    logging.info(f"Train Dataset cluster_negs = {train_dataset.cluster_negs}")
 
     eval_dataset = train_dataset_cls(
         tokenizer, 

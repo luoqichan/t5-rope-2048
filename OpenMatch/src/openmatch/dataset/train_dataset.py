@@ -44,7 +44,10 @@ class TrainDatasetBase:
         self.is_eval = is_eval
         self.maxp = maxp
         self.fusion = fusion
+        self.cluster_negs = True
         self._prepare_data(data_args, shuffle_seed, cache_dir)
+
+        print("Initializing TrainDatasetBase")
 
     def _prepare_data(self, data_args, shuffle_seed, cache_dir):
         if not self.is_eval:
@@ -131,7 +134,7 @@ class DRTrainDataset(TrainDatasetBase):
             group_positives = example['positives']
             group_negatives = example['negatives']
 
-            if self.data_args.cluster_negs: 
+            if self.cluster_negs: 
                 print("CLUSTER NEGATIVES")
                 group_cluster_negatives = example['cluster_negatives']
 
@@ -147,7 +150,7 @@ class DRTrainDataset(TrainDatasetBase):
                 for pos in pos_psg:
                     encoded_passages.append(self.create_one_example(pos))
 
-            if self.data_args.cluster_negs: 
+            if self.cluster_negs: 
                 negative_size = self.data_args.train_n_passages - 1 // 2
                 cluster_negative_size = self.data_args.train_n_passages - 1 - negative_size
             else:
@@ -181,7 +184,7 @@ class DRTrainDataset(TrainDatasetBase):
                     for neg in neg_psg:
                         encoded_passages.append(self.create_one_example(neg))
 
-            if self.data_args.cluster_negs:
+            if self.cluster_negs:
                 if len(group_cluster_negatives) < cluster_negative_size:
                     if hashed_seed is not None:
                         c_negs = random.choices(group_cluster_negatives, k=cluster_negative_size)
