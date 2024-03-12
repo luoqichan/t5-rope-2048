@@ -5,8 +5,7 @@
 #SBATCH --partition=long
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=200G
-#SBATCH --gres=gpu:A6000:4
-#SBATCH --time=7-00:00:00
+#SBATCH --time=5:00:00
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
