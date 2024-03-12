@@ -4,18 +4,23 @@ import logging
 import os
 import sys
 
-from openmatch.arguments import DataArguments
-from openmatch.arguments import DRTrainingArguments as TrainingArguments
-from openmatch.arguments import ModelArguments
-from openmatch.dataset import QPCollator, StreamDRTrainDataset, MappingDRTrainDataset
-from openmatch.modeling import DRModel
-from openmatch.trainer import DRTrainer as Trainer
-from openmatch.trainer import GCDenseTrainer
-from openmatch.utils import get_delta_model_class
+print(os.getcwd())
+
+from OpenMatch.src.openmatch.arguments import DataArguments
+from OpenMatch.src.openmatch.arguments import DRTrainingArguments as TrainingArguments
+from OpenMatch.src.openmatch.arguments import ModelArguments
+from OpenMatch.src.openmatch.dataset import QPCollator, StreamDRTrainDataset, MappingDRTrainDataset
+from OpenMatch.src.openmatch.modeling import DRModel
+from OpenMatch.src.openmatch.trainer import DRTrainer as Trainer
+from OpenMatch.src.openmatch.trainer import GCDenseTrainer, SeparateLossCallback, LossCallback
+from OpenMatch.src.openmatch.utils import get_delta_model_class
 from transformers import AutoConfig, AutoTokenizer, HfArgumentParser, set_seed
 
 logger = logging.getLogger(__name__)
 
+def compute_metrics(evalpred):
+    _, _, hn_loss, cn_loss, _ = evalpred.predictions
+    return {"HN_loss": hn_loss.mean().item(), "CN_loss": cn_loss.mean().item()}
 
 def main():
     parser = HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
@@ -94,7 +99,7 @@ def main():
         maxp=model_args.maxp,
         fusion=model_args.fusion
     )
-    logging.info(f"Train Dataset cluster_negs = {train_dataset.cluster_negs}")
+    # logging.info(f"Train Dataset cluster_negs = {train_dataset.cluster_negs}")
 
     eval_dataset = train_dataset_cls(
         tokenizer, 
@@ -119,15 +124,22 @@ def main():
             max_q_len=data_args.q_max_len,
             fusion=model_args.fusion
         ),
-        delta_model=delta_model if model_args.param_efficient_method else None
+        delta_model=delta_model if model_args.param_efficient_method else None,
+        compute_metrics=compute_metrics
+
     )
     train_dataset.trainer = trainer
+
+    # progress_callback = SeparateLossCallback(trainer=trainer)
+    # trainer.add_callback(progress_callback)
+
+    # trainer_callback = LossCallback(trainer=trainer)
+    # trainer.add_callback(trainer_callback)
 
     trainer.train()
     trainer.save_model()
     if trainer.is_world_process_zero():
         tokenizer.save_pretrained(training_args.output_dir)
-
 
 if __name__ == "__main__":
     main()

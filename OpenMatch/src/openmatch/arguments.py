@@ -115,9 +115,8 @@ class DataArguments:
         default=None, metadata={"help": "Path to BEIR data directory"}
     )
 
-    cluster_negs: bool = field(
-        default=True,
-        metadata={"help": "Whether or not cluster negatives is included in training."}
+    cluster_negs: str = field(
+        default=True, metadata={"help": "Cluster negatives is included in training."}
     )
 
     train_n_passages: int = field(default=8)

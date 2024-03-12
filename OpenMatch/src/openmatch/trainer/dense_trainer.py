@@ -7,11 +7,15 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import datasets
 import torch
+import wandb
 import torch.distributed as dist
 from torch.utils.data import DataLoader
 from transformers.file_utils import is_datasets_available
 from transformers.trainer import Trainer, TRAINING_ARGS_NAME
 from transformers.trainer_pt_utils import IterableDatasetShard
+from transformers.integrations import WandbCallback
+from transformers import TrainerCallback
+
 
 from ..loss import DistributedContrastiveLoss, SimpleContrastiveLoss
 
@@ -115,6 +119,7 @@ class DRTrainer(Trainer):
         else:
             query, passage = inputs
             outputs = model(query=query, passage=passage)
+            self.log({"HN_loss": outputs.hn_loss.item(), "CN_loss": outputs.cn_loss.item()})
         return (outputs.loss, outputs) if return_outputs else outputs.loss
 
     def training_step(self, *args):
@@ -172,3 +177,45 @@ class GCDenseTrainer(DRTrainer):
         loss = self.gc(queries, passages, no_sync_except_last=_distributed)
 
         return loss / self._dist_loss_scale_factor
+
+class SeparateLossCallback(WandbCallback):
+    def __init__(self, trainer, freq=1):
+        print("initialising wandb callback,,,")
+        super().__init__()
+        self._trainer = trainer
+        self.freq = 1
+
+    def on_evaluate(self, args, state, control, **kwargs):
+        super().on_evaluate(args, state, control, **kwargs)
+        print("in callback; on_evaluation")
+        print(kwargs.keys())
+
+        model = kwargs["model"]
+        # dat_loader = DataLoader(self._trainer.eval_dataset, batch_size=4, shuffle=True)
+
+        total_hn = 0
+        total_cn = 0
+
+        for batch in self._trainer.eval_dataloader:
+            print(batch)
+            query, passage = batch
+            output = model(query=query, passage=passage)
+            print(output.hn_loss, output.cn_loss)
+            total_hn += output.hn_loss
+            total_cn += output.cn_loss
+
+        self._wandb.log({"eval/HN_loss": total_hn, "eval/CN_loss": total_cn})
+
+
+class LossCallback(TrainerCallback):
+    def __init__(self, trainer, freq=1):
+        print("initialising trainer callback,,,")
+        super().__init__()
+        self._trainer = trainer
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        print("in TrainerCallback")
+        model = kwargs["model"]
+        output = model(self._trainer.eval_dataloader)
+        print(output.hn_loss, output.cn_loss)
+        wandb.log({"eval/HN_loss": output.hn_loss, "eval/CN_loss": output.cn_loss})
