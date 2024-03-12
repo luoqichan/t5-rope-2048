@@ -16,9 +16,8 @@ text_length=2048
 train_qrels=$DATA_PATH/data/marco_documents_processed/qrels.train.tsv
 train_queries=$DATA_PATH/data/marco_documents_processed/train.query.txt
 corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
-negatives=$DATA_PATH/data/marco_documents_processed/train.negatives.tsv
 
-trained_model_name=t5-rope-bkt-warmup-HN+CN-1
+trained_model_name=t5-rope-bkt-warmup
 
 trec=$DATA_PATH/data/negatives/$trained_model_name
 train_data_folder=$DATA_PATH/data/training_data/$trained_model_name
