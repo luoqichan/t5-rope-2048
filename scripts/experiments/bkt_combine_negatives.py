@@ -8,6 +8,7 @@ parser = ArgumentParser()
 parser.add_argument('--negatives_dir', type=str, required=True)
 parser.add_argument('--hn_file', type=str, required=True)
 parser.add_argument('--cn_file', type=str, required=True)
+parser.add_argument('--save_file', type=str, required=True)
 
 args = parser.parse_args()
 pdir = args.negatives_dir
@@ -15,7 +16,7 @@ pdir = args.negatives_dir
 print("Loading hard negatives...")
 combined_negatives = {}
 count = 0
-with open(f"{pdir}/{args.hn_file}.jsonl", "r") as hn:
+with open(f"{pdir}/{args.hn_file}", "r") as hn:
     for i in tqdm(hn):
         line = json.loads(i)
         k = "-".join([str(x) for x in line["query"]])

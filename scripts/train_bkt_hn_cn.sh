@@ -22,12 +22,12 @@ train_qrels=$DATA_PATH/data/marco_documents_processed/qrels.train.tsv
 train_queries=$DATA_PATH/data/marco_documents_processed/train.query.txt
 corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
 
-initial_model=$DATA_PATH/models/t5-rope-2048-marco-bkt
-train_data_folder=$DATA_PATH/data/training_data/t5-rope-bkt-warmup
-train_data=$train_data_folder/train.jsonl
-valid_data=$train_data_folder/val.jsonl
+initial_model=$DATA_PATH/models/t5-rope-bkt-warmup-HN+CN-1
+train_data_folder=$DATA_PATH/data/training_data/t5-rope-bkt-warmup-HN+CN-1
+train_data=$train_data_folder/train.hncn.jsonl
+valid_data=$train_data_folder/val.hncn.jsonl
 
-trained_model_name=t5-rope-bkt-warmup-HN+CN-1
+trained_model_name=t5-rope-bkt-warmup-HN+CN-1-HN+CN-2
 output_path=$DATA_PATH/models/$trained_model_name
 
 WANDB_PROJECT=$trained_model_name
