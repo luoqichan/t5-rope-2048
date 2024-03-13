@@ -36,7 +36,7 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29778 
     --output_dir $output_path \
     --model_name_or_path $initial_model \
     --do_train \
-    --save_steps 125  \
+    --save_steps 250  \
     --eval_steps 125  \
     --fp16 \
     --train_path $train_data  \

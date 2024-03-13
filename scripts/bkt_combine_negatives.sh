@@ -32,4 +32,4 @@ echo $n_train
 tail -n $n_val $pdir/$save_file > $pdir/val.hncn.jsonl
 head -n $n_train $pdir/$save_file > $pdir/train.hncn.jsonl
 
-# rm $train_data_folder/full.jsonl
+rm $train_data_folder/full.hncn.jsonl

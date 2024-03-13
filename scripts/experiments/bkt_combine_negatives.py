@@ -27,9 +27,10 @@ with open(f"{pdir}/{args.cn_file}", "r") as cn:
     for i in tqdm(cn): 
         line = json.loads(i)
         k = "-".join([str(x) for x in line["query"]])
-        combined_negatives[k]["negatives"] = combined_negatives[k]["negatives"][:5]
-        combined_negatives[k]["negatives"] += line["negatives"][:4]
-        # combined_negatives[k]["negatives"][5:] = line["negatives"][:4]
+        # combined_negatives[k]["negatives"] = combined_negatives[k]["negatives"][:5]
+        # combined_negatives[k]["negatives"] += line["negatives"][:4]
+
+        combined_negatives[k]["cluster_negatives"] = line["negatives"]
 
 
 print("Writing and saving to file...")
