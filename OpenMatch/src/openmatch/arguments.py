@@ -116,7 +116,7 @@ class DataArguments:
     )
 
     cluster_negs: str = field(
-        default=True, metadata={"help": "Cluster negatives is included in training."}
+        default=False, metadata={"help": "Cluster negatives is included in training."}
     )
 
     train_n_passages: int = field(default=8)

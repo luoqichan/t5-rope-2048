@@ -125,7 +125,7 @@ def main():
             fusion=model_args.fusion
         ),
         delta_model=delta_model if model_args.param_efficient_method else None,
-        compute_metrics=compute_metrics
+        # compute_metrics=compute_metrics
 
     )
     train_dataset.trainer = trainer

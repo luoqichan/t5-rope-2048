@@ -119,7 +119,15 @@ class DRTrainer(Trainer):
         else:
             query, passage = inputs
             outputs = model(query=query, passage=passage)
-            self.log({"HN_loss": outputs.hn_loss.item(), "CN_loss": outputs.cn_loss.item()})
+            self.log({
+                        "m0_loss": outputs.m0_loss.item(), 
+                        "m1_loss": outputs.m1_loss.item(),
+                        "m2_loss": outputs.m2_loss.item(),
+                        "m3_loss": outputs.m3_loss.item(),
+                        "m4_loss": outputs.m4_loss.item(),
+                        "m5_loss": outputs.m5_loss.item()
+                          
+                    })
         return (outputs.loss, outputs) if return_outputs else outputs.loss
 
     def training_step(self, *args):
