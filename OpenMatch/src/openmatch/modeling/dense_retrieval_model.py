@@ -29,14 +29,17 @@ from .linear import LinearHead
 logger = logging.getLogger(__name__)
 import wandb
 
-
 @dataclass
 class DROutput(ModelOutput):
     q_reps: Tensor = None
     p_reps: Tensor = None
     loss: Tensor = None
-    hn_loss: Tensor = None
-    cn_loss: Tensor = None
+    m0_loss: Tensor = None
+    m1_loss: Tensor = None
+    m2_loss: Tensor = None
+    m3_loss: Tensor = None
+    m4_loss: Tensor = None
+    m5_loss: Tensor = None
     scores: Tensor = None
 
 
@@ -162,38 +165,7 @@ class DRModel(nn.Module):
 
             scores = torch.matmul(q_reps, p_reps.transpose(0, 1))
 
-            if not self.training:
-                num_psg = self.data_args.train_n_passages
-                num_cn = (num_psg - 1) // 2
-                num_hn = (num_psg - 1) - num_cn
-
-                hn_scores = []
-                for idx in range(0, scores.shape[1], num_psg):
-                    sub = scores[:, idx:idx+num_psg]
-                    pos = sub[:, 0].unsqueeze(-1)
-                    negs = sub[:, 1:1+num_hn]
-
-                    concat = torch.concatenate([pos, negs], axis=1)
-                    hn_scores.append(concat)
-
-                hn_scores = torch.hstack(hn_scores)
-                hn_target = torch.arange(hn_scores.size(0), device=hn_scores.device, dtype=torch.long)
-                hn_target = hn_target * (1 + num_hn)
-                hn_loss = self.loss_fn(hn_scores, hn_target)
-
-                cn_scores = []
-                for idx in range(0, scores.shape[1], num_psg):
-                    sub = scores[:, idx:idx+num_psg]
-                    pos = sub[:, 0].unsqueeze(-1)
-                    negs = sub[:, 1+num_hn:]
-
-                    concat = torch.concatenate([pos, negs], axis=1)
-                    cn_scores.append(concat)
-
-                cn_scores = torch.hstack(cn_scores)
-                cn_target = torch.arange(cn_scores.size(0), device=cn_scores.device, dtype=torch.long)
-                cn_target = cn_target * (1 + num_cn)
-                cn_loss = self.loss_fn(cn_scores, cn_target)
+            #TODO: ADD MRL LOSSES HERE 
 
 
             if self.maxp:
@@ -218,8 +190,12 @@ class DRModel(nn.Module):
             return DROutput(
                 loss=loss,
                 scores=scores,
-                hn_loss=hn_loss,
-                cn_loss=cn_loss,
+                m0_loss=m0_loss,
+                m1_loss=m1_loss,
+                m2_loss=m2_loss, 
+                m3_loss=m3_loss,
+                m4_loss=m4_loss, 
+                m5_loss=m5_loss,
                 q_reps=q_reps,
                 p_reps=p_reps
             )
