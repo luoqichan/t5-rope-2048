@@ -5,7 +5,7 @@
 #SBATCH --partition=long
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=200G
-#SBATCH --gres=gpu:A6000:4
+#SBATCH --gres=gpu:A6000:2
 #SBATCH --time=7-00:00:00
 
 eval "$(conda shell.bash hook)"
@@ -16,7 +16,7 @@ export WANDB_PROJECT=MRL-base
 # initial_model=$1
 split=documents
 text_length=2048
-n_gpus=4
+n_gpus=2
 DATA_PATH=/data/user_data/luoqic/t5-rope-data
 train_qrels=$DATA_PATH/data/marco_documents_processed/qrels.train.tsv
 train_queries=$DATA_PATH/data/marco_documents_processed/train.query.txt
