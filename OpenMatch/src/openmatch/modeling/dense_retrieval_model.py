@@ -112,8 +112,7 @@ class DRModel(nn.Module):
             score: Tensor = None,
     ):
 
-        q_hidden, q_reps = self.encode_query(
-            query)  # (batch_size, hidden_size)
+        q_hidden, q_reps = self.encode_query(query)  # (batch_size, hidden_size)
 
         if self.train_args.distillation:
 
@@ -147,8 +146,11 @@ class DRModel(nn.Module):
 
             p_hidden, p_reps = self.encode_passage(passage, self.fusion)
 
+            all_c_reps = []
             if c_passage is not None:
-                c_hidden, c_reps = self.encode_passags(c_passage, self.fusion)
+                for level in c_passage:
+                    c_hidden, c_reps = self.encode_passage(c_passage, self.fusion)
+                    all_c_reps.append(c_reps)
 
             if q_reps is None or p_reps is None:
                 return DROutput(

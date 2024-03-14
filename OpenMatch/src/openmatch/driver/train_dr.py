@@ -4,15 +4,15 @@ import logging
 import os
 import sys
 
-from openmatch.arguments import DataArguments
-from openmatch.arguments import DRTrainingArguments as TrainingArguments
-from openmatch.arguments import ModelArguments
-from openmatch.dataset import QPCollator, StreamDRTrainDataset, MappingDRTrainDataset
-# from openmatch.dataset import QPCollator, StreamBKTTrainDataset, MappingBKTTrainDataset
-from openmatch.modeling import DRModel
-from openmatch.trainer import DRTrainer as Trainer
-from openmatch.trainer import GCDenseTrainer
-from openmatch.utils import get_delta_model_class
+from OpenMatch.src.openmatch.arguments import DataArguments
+from OpenMatch.src.openmatch.arguments import DRTrainingArguments as TrainingArguments
+from OpenMatch.src.openmatch.arguments import ModelArguments
+# from OpenMatch.src.openmatch.dataset import QPCollator, StreamDRTrainDataset, MappingDRTrainDataset
+from OpenMatch.src.openmatch.dataset import QPCollator, StreamBKTTrainDataset, MappingBKTTrainDataset
+from OpenMatch.src.openmatch.modeling import DRModel
+from OpenMatch.src.openmatch.trainer import DRTrainer as Trainer
+from OpenMatch.src.openmatch.trainer import GCDenseTrainer
+from OpenMatch.src.openmatch.utils import get_delta_model_class
 from transformers import AutoConfig, AutoTokenizer, HfArgumentParser, set_seed
 
 logger = logging.getLogger(__name__)
