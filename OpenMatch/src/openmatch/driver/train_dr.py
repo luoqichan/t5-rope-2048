@@ -7,8 +7,8 @@ import sys
 from openmatch.arguments import DataArguments
 from openmatch.arguments import DRTrainingArguments as TrainingArguments
 from openmatch.arguments import ModelArguments
-# from openmatch.dataset import QPCollator, StreamDRTrainDataset, MappingDRTrainDataset
-from openmatch.dataset import QPCollator, StreamBKTTrainDataset, MappingBKTTrainDataset
+from openmatch.dataset import QPCollator, StreamDRTrainDataset, MappingDRTrainDataset
+# from openmatch.dataset import QPCollator, StreamBKTTrainDataset, MappingBKTTrainDataset
 from openmatch.modeling import DRModel
 from openmatch.trainer import DRTrainer as Trainer
 from openmatch.trainer import GCDenseTrainer
