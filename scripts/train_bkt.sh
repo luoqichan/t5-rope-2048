@@ -10,7 +10,7 @@
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
-
+export PYTHONPATH=/home/luoqic/t5-rope-2048
 
 
 split=documents
@@ -37,12 +37,12 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --model_name_or_path $initial_model \
     --do_train \
     --save_steps 125  \
-    --eval_steps 125  \
+    --eval_steps 2  \
     --max_steps 10   \
     --fp16 \
     --train_path $train_data  \
     --eval_path $valid_data  \
-    --per_device_train_batch_size 128 \
+    --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 4 \
     --train_n_passages 10  \
     --learning_rate 5e-6  \

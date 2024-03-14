@@ -101,12 +101,33 @@ class DRModel(nn.Module):
             "normalize": self.normalize,
         }
         return config
+    
+    def _get_loss(self, q_reps, p_reps):
+        scores = torch.matmul(q_reps, p_reps.transpose(0, 1))
+
+        if self.maxp:
+            scores = torch.max(scores.view(scores.size(0),int(scores.size(1)/self.maxp), self.maxp), dim=2).values
+
+        target = torch.arange(
+            scores.size(0),
+            device=scores.device,
+            dtype=torch.long
+        )
+        target = target * self.data_args.train_n_passages
+
+        loss = self.loss_fn(scores, target)
+        return loss
+
 
     def forward(
             self,
             query: Dict[str, Tensor] = None,
             passage: Dict[str, Tensor] = None,
-            c_passage: Dict[str, Tensor] = None,
+            cn0: Dict[str, Tensor] = None,
+            cn1: Dict[str, Tensor] = None,
+            cn2: Dict[str, Tensor] = None,
+            cn3: Dict[str, Tensor] = None,
+            cn4: Dict[str, Tensor] = None,
             positive: Dict[str, Tensor] = None,
             negative: Dict[str, Tensor] = None,
             score: Tensor = None,
@@ -146,11 +167,11 @@ class DRModel(nn.Module):
 
             p_hidden, p_reps = self.encode_passage(passage, self.fusion)
 
-            all_c_reps = []
-            if c_passage is not None:
-                for level in c_passage:
-                    c_hidden, c_reps = self.encode_passage(c_passage, self.fusion)
-                    all_c_reps.append(c_reps)
+            cn0_hidden, cn0_reps = self.encode_passage(cn0, self.fusion)
+            cn1_hidden, cn1_reps = self.encode_passage(cn1, self.fusion)
+            cn2_hidden, cn2_reps = self.encode_passage(cn2, self.fusion)
+            cn3_hidden, cn3_reps = self.encode_passage(cn3, self.fusion)
+            cn4_hidden, cn4_reps = self.encode_passage(cn4, self.fusion)
 
             if q_reps is None or p_reps is None:
                 return DROutput(
@@ -162,9 +183,12 @@ class DRModel(nn.Module):
             if self.train_args.negatives_x_device:
                 q_reps = self.dist_gather_tensor(q_reps)
                 p_reps = self.dist_gather_tensor(p_reps)
+                cn0_reps = self.dist_gather_tensor(cn0_reps)
+                cn1_reps = self.dist_gather_tensor(cn1_reps)
+                cn2_reps = self.dist_gather_tensor(cn2_reps)
+                cn3_reps = self.dist_gather_tensor(cn3_reps)
+                cn4_reps = self.dist_gather_tensor(cn4_reps)
 
-                if c_reps is not None:
-                    c_reps = self.dist_gather_tensor(c_reps)
 
             effective_bsz = self.train_args.per_device_train_batch_size * self.world_size \
                 if self.train_args.negatives_x_device \
@@ -182,30 +206,30 @@ class DRModel(nn.Module):
             )
             target = target * self.data_args.train_n_passages
 
-            loss = self.loss_fn(scores, target)
+            hn_loss = self.loss_fn(scores, target)
 
+            cn0_loss = self._get_loss(q_reps, cn0_reps)
+            cn1_loss = self._get_loss(q_reps, cn1_reps)
+            cn2_loss = self._get_loss(q_reps, cn2_reps)
+            cn3_loss = self._get_loss(q_reps, cn3_reps)
+            cn4_loss = self._get_loss(q_reps, cn4_reps)
 
-            cn_scores = torch.matmul(q_reps, c_reps.transpose(0, 1))
-            cn_loss = self.loss_fn(cn_scores, target)
-
-            hn_loss = loss 
-            loss += cn_loss
-
+            all_losses = [hn_loss, cn0_loss, cn1_loss, cn2_loss, cn3_loss, cn4_loss]
+ 
             if self.training and self.train_args.negatives_x_device:
                 loss = loss * self.world_size  # counter average weight reduction
-                hn_loss = hn_loss * self.world_size
-                cn_loss = cn_loss * self.world_size
+                all_losses = [l * self.world_size for l in all_losses]
 
-            wandb.log({"hn_loss": hn_loss, "cn_loss": cn_loss}, commit=False)
+            loss = sum(all_losses)     
+
 
             return DROutput(
                 loss=loss,
-                hn_loss=hn_loss,
-                cn_loss=cn_loss, 
+                all_losses=all_losses,
                 scores=scores,
                 q_reps=q_reps,
                 p_reps=p_reps
-            )
+                )
 
     def encode(self, items, model, head, is_q=False, fusion=None):
         if items is None:

@@ -163,12 +163,15 @@ class GCDenseTrainer(DRTrainer):
 
     def training_step(self, model, inputs) -> torch.Tensor:
         model.train()
-        queries, passages, c_passages = self._prepare_inputs(inputs)
-        queries, passages, c_passages = {'query': queries}, {'passage': passages}, {'c_passage': c_passages}
+        print("\nIN TRAINING STEP")
+        print(inputs[0].keys())
+        print(inputs[0])
+        queries, passages, cn_0, cn_1, cn_2, cn_3, cn_4 = self._prepare_inputs(inputs)
+        queries, passages, cn_0, cn_1, cn_2, cn_3, cn_4 = {'query': queries}, {'passage': passages}, {'cn0': cn_0}, {'cn1': cn_1}, {'cn2': cn_2}, {'cn3': cn_3}, {'cn4': cn_4}
 
 
         _distributed = self.args.local_rank > -1
         self.gc.models = [model, model]
-        loss = self.gc(queries, passages, no_sync_except_last=_distributed)
+        loss = self.gc(queries, passages, cn_0, cn_1, cn_2, cn_3, cn_4, no_sync_except_last=_distributed)
 
         return loss / self._dist_loss_scale_factor
