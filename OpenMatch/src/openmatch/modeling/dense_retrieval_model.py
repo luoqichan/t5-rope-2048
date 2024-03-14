@@ -175,24 +175,28 @@ class DRModel(nn.Module):
                 if self.train_args.negatives_x_device \
                 else self.train_args.per_device_train_batch_size
 
-
+            scores = torch.matmul(q_reps, p_reps.transpose(0, 1))
             if self.maxp:
                 scores = torch.max(scores.view(scores.size(0),int(scores.size(1)/self.maxp), self.maxp), dim=2).values
 
-            if self.training and self.train_args.negatives_x_device:
-                loss = loss * self.world_size  # counter average weight reduction
-                cn_loss = cn_loss * self.world_size
-                hn_loss = hn_loss * self.world_size
 
-
-            m0_loss = self._get_loss(q_reps[:, 32], p_reps[:, 32])
-            m1_loss = self._get_loss(q_reps[:, 64], p_reps[:, 64])
-            m2_loss = self._get_loss(q_reps[:, 128], p_reps[:, 128])
-            m3_loss = self._get_loss(q_reps[:, 256], p_reps[:, 256])
-            m4_loss = self._get_loss(q_reps[:, 512], p_reps[:, 512])
+            m0_loss = self._get_loss(q_reps[:, :32], p_reps[:,:32])
+            m1_loss = self._get_loss(q_reps[:, :64], p_reps[:, :64])
+            m2_loss = self._get_loss(q_reps[:, :128], p_reps[:, :128])
+            m3_loss = self._get_loss(q_reps[:, :256], p_reps[:, :256])
+            m4_loss = self._get_loss(q_reps[:, :512], p_reps[:, :512])
             m5_loss = self._get_loss(q_reps, p_reps)
 
             loss = m0_loss + m1_loss + m2_loss + m3_loss + m4_loss + m5_loss
+
+            if self.training and self.train_args.negatives_x_device:
+                loss = loss * self.world_size  # counter average weight reduction
+                m0_loss = m0_loss * self.world_size
+                m1_loss = m1_loss * self.world_size
+                m2_loss = m2_loss * self.world_size
+                m3_loss = m3_loss * self.world_size
+                m4_loss = m4_loss * self.world_size 
+                m5_loss = m5_loss * self.world_size 
 
 
             return DROutput(

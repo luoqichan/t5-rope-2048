@@ -4,8 +4,6 @@ import logging
 import os
 import sys
 
-print(os.getcwd())
-
 from OpenMatch.src.openmatch.arguments import DataArguments
 from OpenMatch.src.openmatch.arguments import DRTrainingArguments as TrainingArguments
 from OpenMatch.src.openmatch.arguments import ModelArguments
@@ -19,8 +17,14 @@ from transformers import AutoConfig, AutoTokenizer, HfArgumentParser, set_seed
 logger = logging.getLogger(__name__)
 
 def compute_metrics(evalpred):
-    _, _, hn_loss, cn_loss, _ = evalpred.predictions
-    return {"HN_loss": hn_loss.mean().item(), "CN_loss": cn_loss.mean().item()}
+    _, _, m0_loss, m1_loss, m2_loss, m3_loss, m4_loss, m5_loss, _ = evalpred.predictions
+    return {"m0_loss": m0_loss.mean().item(), 
+            "m1_loss": m1_loss.mean().item(),
+            "m2_loss": m2_loss.mean().item(),
+            "m3_loss": m3_loss.mean().item(),
+            "m4_loss": m4_loss.mean().item(),
+            "m5_loss": m5_loss.mean().item(),
+            }
 
 def main():
     parser = HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
@@ -125,7 +129,7 @@ def main():
             fusion=model_args.fusion
         ),
         delta_model=delta_model if model_args.param_efficient_method else None,
-        # compute_metrics=compute_metrics
+        compute_metrics=compute_metrics
 
     )
     train_dataset.trainer = trainer

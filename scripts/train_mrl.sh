@@ -11,9 +11,9 @@
 eval "$(conda shell.bash hook)"
 conda activate openmatch
 export PYTHONPATH=/home/luoqic/t5-rope-2048
+export WANDB_PROJECT=MRL-base
 
 # initial_model=$1
-
 split=documents
 text_length=2048
 n_gpus=4
