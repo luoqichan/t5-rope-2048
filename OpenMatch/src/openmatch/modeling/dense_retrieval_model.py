@@ -207,7 +207,7 @@ class DRModel(nn.Module):
                 m2_loss=m2_loss, 
                 m3_loss=m3_loss,
                 m4_loss=m4_loss, 
-                m5_loss=loss,
+                m5_loss=m5_loss,
                 q_reps=q_reps,
                 p_reps=p_reps
             )
