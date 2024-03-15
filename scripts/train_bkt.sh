@@ -11,12 +11,13 @@
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
+export WANDB_PROJECT=MRL-base
 
 export PYTHONPATH=/home/luoqic/t5-rope-2048
 
 split=documents
 text_length=2048
-n_gpus=2
+n_gpus=4
 DATA_PATH=/data/user_data/luoqic/t5-rope-data
 train_qrels=$DATA_PATH/data/marco_documents_processed/qrels.train.tsv
 train_queries=$DATA_PATH/data/marco_documents_processed/train.query.txt
