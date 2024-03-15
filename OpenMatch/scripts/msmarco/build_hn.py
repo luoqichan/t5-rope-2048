@@ -35,40 +35,6 @@ def load_ranking(rank_file, relevance, n_sample, depth, split_token):
                 random.shuffle(negatives)
                 yield curr_q, relevance[curr_q], negatives[:n_sample], split_token
                 return
-            
-#TODO: Loading multiple rankings? 
-def load_ranking_archive(rank_file, relevance, n_sample, depth, split_token):
-    with open(rank_file) as rf:
-        lines = iter(rf)
-        l_0 = next(lines).strip().split()
-        q_0, p_0 = l_0[0], l_0[1]
-
-        curr_q = q_0
-        negatives = [] if p_0 in relevance[q_0] else [p_0]
-        cluster_negatives = [[c] for c in l_0[2:]]
-
-        while True:
-            try:
-                l = next(lines).strip().split()
-                q, p, cn = l[0], l[1], l[2:]
-                if q != curr_q:
-                    negatives = negatives[:depth]
-                    random.shuffle(negatives)
-                    yield curr_q, relevance[curr_q], negatives[:n_sample], [c[:n_sample] for c in cluster_negatives],split_token
-                    curr_q = q
-                    negatives = [] if p in relevance[q] else [p]
-                    cluster_negatives = [[c] for c in cn]
-                else:
-                    if p not in relevance[q]:
-                        negatives.append(p)
-                    for idx, level in enumerate(cluster_negatives): 
-                        level.append(cn[idx])
-
-            except StopIteration:
-                negatives = negatives[:depth]
-                random.shuffle(negatives)
-                yield curr_q, relevance[curr_q], negatives[:n_sample], [c[:n_sample] for c in cluster_negatives], split_token
-                return
 
 def load_processed_ranking(rank_file, relevance, n_sample, depth, split_token):
     with open(rank_file) as rf:
