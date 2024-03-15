@@ -6,12 +6,12 @@
 #SBATCH --partition=long
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=200G
-#SBATCH --gres=gpu:A6000:2
+#SBATCH --gres=gpu:A6000:4
 #SBATCH --time=1:00:00
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
-export WANDB_PROJECT=MRL-base
+export WANDB_PROJECT=t5-rope-bkt
 
 export PYTHONPATH=/home/luoqic/t5-rope-2048
 
@@ -24,20 +24,21 @@ train_queries=$DATA_PATH/data/marco_documents_processed/train.query.txt
 corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
 
 initial_model=$DATA_PATH/models/t5-base-marco-documents-2048
-train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048
-train_data=$train_data_folder/split00.hn.jsonl
-valid_data=$train_data_folder/split00.hn.jsonl
 
-trained_model_name=t5-base-marco-documents-2048-debug
+
+trained_model_name=t5-base-marco-documents-2048-bkt
+train_data_folder=$DATA_PATH/data/training_data/$trained_model_name
+train_data=$train_data_folder/train.jsonl
+valid_data=$train_data_folder/val.jsonl
+
 output_path=$DATA_PATH/models/$trained_model_name
 
 accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 OpenMatch/src/openmatch/driver/train_dr.py  \
     --output_dir $output_path \
     --model_name_or_path $initial_model \
     --do_train \
-    --save_steps 125  \
-    --eval_steps 2  \
-    --max_steps 50   \
+    --save_steps 300  \
+    --eval_steps 125  \
     --fp16 \
     --train_path $train_data  \
     --eval_path $valid_data  \
@@ -49,7 +50,7 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --p_max_len $text_length  \
     --num_train_epochs 2  \
     --report_to wandb \
-    --logging_steps 2 \
+    --logging_steps 125 \
     --run_name $trained_model_name \
     --evaluation_strategy steps \
     --dataloader_num_workers 4 \

@@ -161,7 +161,6 @@ class DRModel(nn.Module):
             
 
             scores = torch.matmul(q_reps, p_reps.transpose(0, 1))
-            print(f"scores shape: {scores.shape}")
             num_levels = 6
             num_psg = (self.data_args.train_n_passages - 1) * num_levels + 1
             num_neg = self.data_args.train_n_passages - 1

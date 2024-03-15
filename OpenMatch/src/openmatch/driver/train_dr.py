@@ -21,10 +21,11 @@ logger = logging.getLogger(__name__)
 def compute_metrics(evalpred):
     _, _, all_loss, _ = evalpred.predictions
 
-    results = {"HN_loss": all_loss[0].item()}
+
+    results = {"HN_loss": all_loss[0].mean().item()}
 
     for i in range(5):
-        results[f"cn_{i}"] = all_loss[i+1].item()
+        results[f"cn_{i}"] = all_loss[i+1].mean().item()
 
     return results
 

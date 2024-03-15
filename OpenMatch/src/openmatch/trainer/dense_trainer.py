@@ -121,12 +121,12 @@ class DRTrainer(Trainer):
             query, passage = inputs
             outputs = model(query=query, passage=passage)
             all_loss = outputs.all_loss
-            print(f"all_loss: {all_loss}")
+            # print(f"all_loss: {all_loss}")
             results = {"HN_loss": all_loss[0].item()}
             for i in range(5):
                 results[f"cn_{i}"] = all_loss[i+1].item()
             self.log(results)
-            print(f"results: {results}")
+            # print(f"results: {results}")
         return (outputs.loss, outputs) if return_outputs else outputs.loss
 
     def training_step(self, *args):
