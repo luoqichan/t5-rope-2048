@@ -35,8 +35,7 @@ class DROutput(ModelOutput):
     q_reps: Tensor = None
     p_reps: Tensor = None
     loss: Tensor = None
-    hn_loss: Tensor = None
-    cn_loss: Tensor = None
+    all_loss: Tensor = None
     scores: Tensor = None
 
 
@@ -159,41 +158,36 @@ class DRModel(nn.Module):
             effective_bsz = self.train_args.per_device_train_batch_size * self.world_size \
                 if self.train_args.negatives_x_device \
                 else self.train_args.per_device_train_batch_size
+            
 
             scores = torch.matmul(q_reps, p_reps.transpose(0, 1))
+            print(f"scores shape: {scores.shape}")
+            num_levels = 6
+            num_psg = (self.data_args.train_n_passages - 1) * num_levels + 1
+            num_neg = self.data_args.train_n_passages - 1
 
-            if not self.training:
-                num_psg = self.data_args.train_n_passages
-                num_cn = (num_psg - 1) // 2
-                num_hn = (num_psg - 1) - num_cn
+            all_scores = [[] for _ in (range(num_levels))]
+            neg_idx = 0
+            for idx in range(0, scores.shape[1], num_psg):
+                neg_idx=0
 
-                hn_scores = []
-                for idx in range(0, scores.shape[1], num_psg):
-                    sub = scores[:, idx:idx+num_psg]
-                    pos = sub[:, 0].unsqueeze(-1)
-                    negs = sub[:, 1:1+num_hn]
+                sub = scores[:, idx:idx+num_psg]
+                pos = sub[:, 0].unsqueeze(-1)
 
+                for n in range(1, sub.shape[1], num_neg):
+                    negs = sub[:, n:n+num_neg]
                     concat = torch.concatenate([pos, negs], axis=1)
-                    hn_scores.append(concat)
 
-                hn_scores = torch.hstack(hn_scores)
-                hn_target = torch.arange(hn_scores.size(0), device=hn_scores.device, dtype=torch.long)
-                hn_target = hn_target * (1 + num_hn)
-                hn_loss = self.loss_fn(hn_scores, hn_target)
+                    all_scores[neg_idx].append(concat)
+                    neg_idx += 1
 
-                cn_scores = []
-                for idx in range(0, scores.shape[1], num_psg):
-                    sub = scores[:, idx:idx+num_psg]
-                    pos = sub[:, 0].unsqueeze(-1)
-                    negs = sub[:, 1+num_hn:]
-
-                    concat = torch.concatenate([pos, negs], axis=1)
-                    cn_scores.append(concat)
-
-                cn_scores = torch.hstack(cn_scores)
-                cn_target = torch.arange(cn_scores.size(0), device=cn_scores.device, dtype=torch.long)
-                cn_target = cn_target * (1 + num_cn)
-                cn_loss = self.loss_fn(cn_scores, cn_target)
+            all_loss = []
+            for score in all_scores: 
+                s = torch.hstack(score)
+                s_target = torch.arange(s.size(0), device=s.device, dtype=torch.long)
+                s_target = s_target * (1 + num_neg)
+                s_loss = self.loss_fn(s, s_target)
+                all_loss.append(s_loss)
 
 
             if self.maxp:
@@ -210,16 +204,14 @@ class DRModel(nn.Module):
 
             if self.training and self.train_args.negatives_x_device:
                 loss = loss * self.world_size  # counter average weight reduction
-                cn_loss = cn_loss * self.world_size
-                hn_loss = hn_loss * self.world_size
+                all_loss = [l * self.world_size for l in all_loss] 
 
             # wandb.log({"train/hn_loss": hn_loss, "train/cn_loss": cn_loss}, commit=False)
 
             return DROutput(
                 loss=loss,
                 scores=scores,
-                hn_loss=hn_loss,
-                cn_loss=cn_loss,
+                all_loss=all_loss,
                 q_reps=q_reps,
                 p_reps=p_reps
             )

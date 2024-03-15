@@ -150,8 +150,8 @@ class DRTrainDataset(TrainDatasetBase):
                     encoded_passages.append(self.create_one_example(pos))
 
             if self.cluster_negs: 
-                cluster_negative_size = (self.data_args.train_n_passages - 1) // 2
-                negative_size = (self.data_args.train_n_passages - 1) - cluster_negative_size
+                cluster_negative_size = self.data_args.train_n_passages - 1
+                negative_size = self.data_args.train_n_passages - 1
             else:
                 negative_size = self.data_args.train_n_passages - 1
 
@@ -184,36 +184,36 @@ class DRTrainDataset(TrainDatasetBase):
                         encoded_passages.append(self.create_one_example(neg))
 
             if self.cluster_negs:
-                if len(group_cluster_negatives) < cluster_negative_size:
-                    if hashed_seed is not None:
-                        c_negs = random.choices(group_cluster_negatives, k=cluster_negative_size)
+                for cluster_n in group_cluster_negatives:
+                    if len(cluster_n) < cluster_negative_size:
+                        if hashed_seed is not None:
+                            c_negs = random.choices(cluster_n, k=cluster_negative_size)
+                        else:
+                            c_negs = [x for x in cluster_n]
+                            c_negs = c_negs * 2
+                            c_negs = c_negs[:cluster_negative_size]
+                    elif self.data_args.train_n_passages == 1:
+                        c_negs = []
+                    elif self.data_args.negative_passage_no_shuffle:
+                        c_negs = cluster_n[:cluster_negative_size]
                     else:
-                        c_negs = [x for x in group_cluster_negatives]
+                        _offset = epoch * cluster_negative_size % len(cluster_n)
+                        c_negs = [x for x in cluster_n]
+                        if hashed_seed is not None:
+                            random.Random(hashed_seed).shuffle(c_negs)
                         c_negs = c_negs * 2
-                        c_negs = c_negs[:cluster_negative_size]
-                elif self.data_args.train_n_passages == 1:
-                    c_negs = []
-                elif self.data_args.negative_passage_no_shuffle:
-                    c_negs = group_cluster_negatives[:cluster_negative_size]
-                else:
-                    _offset = epoch * cluster_negative_size % len(group_cluster_negatives)
-                    c_negs = [x for x in group_cluster_negatives]
-                    if hashed_seed is not None:
-                        random.Random(hashed_seed).shuffle(c_negs)
-                    c_negs = c_negs * 2
-                    c_negs = c_negs[_offset: _offset + cluster_negative_size]
+                        c_negs = c_negs[_offset: _offset + cluster_negative_size]
 
-                if not self.maxp and not self.fusion:
-                    for c_neg_psg in c_negs:
-                        encoded_passages.append(self.create_one_example(c_neg_psg))
-                else:
-                    for c_neg_psg in c_negs:
-                        for c_neg in c_neg_psg:
-                            encoded_passages.append(self.create_one_example(c_neg))
-
+                    if not self.maxp and not self.fusion:
+                        for c_neg_psg in c_negs:
+                            encoded_passages.append(self.create_one_example(c_neg_psg))
+                    else:
+                        for c_neg_psg in c_negs:
+                            for c_neg in c_neg_psg:
+                                encoded_passages.append(self.create_one_example(c_neg))
 
             if not self.maxp and not self.fusion:
-                assert len(encoded_passages) == self.data_args.train_n_passages
+                assert len(encoded_passages) == self.data_args.train_n_passages + 45 
             elif self.maxp:
                 assert len(encoded_passages) == self.data_args.train_n_passages * self.maxp
             elif self.fusion:

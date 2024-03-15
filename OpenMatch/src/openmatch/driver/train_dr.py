@@ -19,8 +19,14 @@ from transformers import AutoConfig, AutoTokenizer, HfArgumentParser, set_seed
 logger = logging.getLogger(__name__)
 
 def compute_metrics(evalpred):
-    _, _, hn_loss, cn_loss, _ = evalpred.predictions
-    return {"HN_loss": hn_loss.mean().item(), "CN_loss": cn_loss.mean().item()}
+    _, _, all_loss, _ = evalpred.predictions
+
+    results = {"HN_loss": all_loss[0].item()}
+
+    for i in range(5):
+        results[f"cn_{i}"] = all_loss[i+1].item()
+
+    return results
 
 def main():
     parser = HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
