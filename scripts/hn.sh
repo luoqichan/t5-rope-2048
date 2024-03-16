@@ -3,9 +3,10 @@
 #SBATCH --output=logs/%x-%j.out
 #SBATCH -e logs/%x-%j.err
 #SBATCH --partition=long
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=200G
-#SBATCH --time=5:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=256G
+#SBATCH --gres=gpu:A6000:2
+#SBATCH --time=1-00:00:00
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
