@@ -11,7 +11,8 @@
 eval "$(conda shell.bash hook)"
 conda activate openmatch
 
-model_to_eval=$1
+model_to_eval=#1
+model_to_eval=/data/user_data/luoqic/t5-rope-data/models/marco/t5-base-marco-documents-2048-self-hn-1
 model_name=$(basename "$model_to_eval")
 
 text_length=2048
@@ -28,17 +29,18 @@ mkdir -p $run_save
 mkdir -p $embeddings_out
 
 
-accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 OpenMatch/src/openmatch/driver/build_index.py  \
-    --output_dir $embeddings_out \
-    --model_name_or_path $model_to_eval \
-    --per_device_eval_batch_size 430  \
-    --corpus_path $corpus \
-    --doc_template "Title: <title> Text: <text>"  \
-    --doc_column_names id,title,text  \
-    --p_max_len $text_length  \
-    --fp16  \
-    --dataloader_num_workers 1 \
-    --rope True
+# Generate corpus embeddings 
+# accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 OpenMatch/src/openmatch/driver/build_index.py  \
+#     --output_dir $embeddings_out \
+#     --model_name_or_path $model_to_eval \
+#     --per_device_eval_batch_size 430  \
+#     --corpus_path $corpus \
+#     --doc_template "Title: <title> Text: <text>"  \
+#     --doc_column_names id,title,text  \
+#     --p_max_len $text_length  \
+#     --fp16  \
+#     --dataloader_num_workers 1 \
+#     --rope True
 
 accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 OpenMatch/src/openmatch/driver/retrieve.py  \
     --output_dir $embeddings_out  \
