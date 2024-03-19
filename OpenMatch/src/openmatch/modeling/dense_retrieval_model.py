@@ -197,7 +197,8 @@ class DRModel(nn.Module):
                 device=scores.device,
                 dtype=torch.long
             )
-            target = target * self.data_args.train_n_passages
+            # target = target * self.data_args.train_n_passages
+            target = target * num_psg
 
             loss = self.loss_fn(scores, target)
 
@@ -205,7 +206,6 @@ class DRModel(nn.Module):
                 loss = loss * self.world_size  # counter average weight reduction
                 all_loss = [l * self.world_size for l in all_loss] 
 
-            # wandb.log({"train/hn_loss": hn_loss, "train/cn_loss": cn_loss}, commit=False)
 
             return DROutput(
                 loss=loss,

@@ -6,8 +6,8 @@
 #SBATCH --partition=long
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=200G
-#SBATCH --gres=gpu:A6000:4
-#SBATCH --time=1:00:00
+#SBATCH --gres=gpu:A6000:8
+#SBATCH --time=5-00:00:00
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
@@ -17,7 +17,7 @@ export PYTHONPATH=/home/luoqic/t5-rope-2048
 
 split=documents
 text_length=2048
-n_gpus=4
+n_gpus=8
 DATA_PATH=/data/user_data/luoqic/t5-rope-data
 train_qrels=$DATA_PATH/data/marco_documents_processed/qrels.train.tsv
 train_queries=$DATA_PATH/data/marco_documents_processed/train.query.txt
@@ -37,28 +37,28 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --output_dir $output_path \
     --model_name_or_path $initial_model \
     --do_train \
-    --save_steps 300  \
-    --eval_steps 125  \
+    --save_steps 1200  \
+    --eval_steps 100  \
     --fp16 \
     --train_path $train_data  \
     --eval_path $valid_data  \
-    --per_device_train_batch_size 2 \
+    --per_device_train_batch_size 12 \
     --per_device_eval_batch_size 4 \
     --train_n_passages 10  \
     --learning_rate 5e-6  \
     --q_max_len 32  \
     --p_max_len $text_length  \
-    --num_train_epochs 2  \
+    --num_train_epochs 1  \
     --report_to wandb \
-    --logging_steps 125 \
+    --logging_steps 50 \
     --run_name $trained_model_name \
     --evaluation_strategy steps \
     --dataloader_num_workers 4 \
     --rope True \
     --grad_cache True \
-    --use_mapping_dataset True \
-    --gc_p_chunk_size 24 \
-    --gc_q_chunk_size 24 \
+    --use_mapping_dataset False \
+    --gc_p_chunk_size 12 \
+    --gc_q_chunk_size 12 \
     --negatives_x_device True 
 # embeddings_out=$DATA_PATH/data/embeddings/train/$trained_model_name
 # run_save=$DATA_PATH/data/negatives/$trained_model_name
