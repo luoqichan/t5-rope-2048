@@ -2,24 +2,27 @@
 #SBATCH --job-name=eval_dr_openmatch
 #SBATCH --output=logs/%x-%j.out
 #SBATCH -e logs/%x-%j.err
-#SBATCH --partition=general
+#SBATCH --partition=long
 #SBATCH --gres=gpu:A6000:2
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=200G
-#SBATCH --time=2-00:00:00
+#SBATCH --time=3:00:00
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
 
-model_to_eval=#1
-model_to_eval=/data/user_data/luoqic/t5-rope-data/models/marco/t5-base-marco-documents-2048-self-hn-1
+# model_to_eval=1
+model_to_eval=/data/user_data/luoqic/t5-rope-data/models/t5-base-marco-documents-2048-bkt
 model_name=$(basename "$model_to_eval")
+echo $model_name
+DATA_PATH=/data/user_data/luoqic/t5-rope-data
+
 
 text_length=2048
 n_gpus=2
 
-embeddings_out="./data/embeddings/dev/$model_name"
-run_save="./results/$model_name"
+embeddings_out="$DATA_PATH/data/embeddings/dev/$model_name"
+run_save="$DATA_PATH/results/$model_name"
 
 dev_queries=./data/marco_documents_processed/dev.query.txt
 dev_qrels=./data/marco_documents_processed/qrels.dev.tsv
@@ -41,6 +44,9 @@ mkdir -p $embeddings_out
 #     --fp16  \
 #     --dataloader_num_workers 1 \
 #     --rope True
+
+# cp $DATA_PATH/data/embeddings/train/$model_name/embeddings.corpus.* $DATA_PATH/data/embeddings/dev/$model_name
+
 
 accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 OpenMatch/src/openmatch/driver/retrieve.py  \
     --output_dir $embeddings_out  \
