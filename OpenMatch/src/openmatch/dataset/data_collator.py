@@ -26,7 +26,7 @@ class QPCollator(DataCollatorWithPadding):
     def __call__(self, features):
         qq = [f["query_"] for f in features]
         dd = [f["passages"] for f in features]
-        cc = [f["c_passages"] for f in features]
+        # cc = [f["c_passages"] for f in features]
 
         all_collated = []
 
@@ -51,16 +51,32 @@ class QPCollator(DataCollatorWithPadding):
         all_collated.append(q_collated)
         all_collated.append(d_collated)
 
-        for c in cc: 
-            if isinstance(qq[0], list):
-                c = sum(c, [])
+        for enum in range(5):
+            cc = [f[f"cluster_level{enum}_passages"] for f in features]
+            if isinstance(cc[0], list):
+                cc = sum(cc, [])
+            
             c_collated = self.tokenizer.pad(
-                c, 
+                cc, 
                 padding='max_length',
                 max_length=self.max_p_len,
                 return_tensors="pt"
             )
+
             all_collated.append(c_collated)
+
+        # for c in cc: 
+        #     if isinstance(c[0], list):
+        #         c = sum(c, [])
+            
+        #     c_collated = self.tokenizer.pad(
+        #         c, 
+        #         padding='max_length',
+        #         max_length=self.max_p_len,
+        #         return_tensors="pt"
+        #     )
+
+        #     all_collated.append(c_collated)
             
 
         if self.fusion:
@@ -70,6 +86,7 @@ class QPCollator(DataCollatorWithPadding):
             c_collated['input_ids'] = concatenate_tensors_gradcache_fusion(c_collated['input_ids'], self.fusion)
             c_collated['attention_mask'] = concatenate_tensors_gradcache_fusion(c_collated['attention_mask'], self.fusion)
 
+        print(f"length of all_collated: {len(all_collated)}")
         return all_collated
 
 

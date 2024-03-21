@@ -37,8 +37,7 @@ class DROutput(ModelOutput):
     p_reps: Tensor = None
     loss: Tensor = None
     scores: Tensor = None
-    cn_loss: Tensor = None
-    hn_loss: Tensor = None
+    all_losses: Tensor = None
 
 
 class DRModel(nn.Module):
@@ -103,6 +102,7 @@ class DRModel(nn.Module):
         return config
     
     def _get_loss(self, q_reps, p_reps):
+        bsize = q_reps.shape[0]
         scores = torch.matmul(q_reps, p_reps.transpose(0, 1))
 
         if self.maxp:
@@ -116,6 +116,28 @@ class DRModel(nn.Module):
         target = target * self.data_args.train_n_passages
 
         loss = self.loss_fn(scores, target)
+        return loss
+    
+
+    def _get_cluster_loss(self, q_reps, p_reps):
+        """ No in-batch negatives for cluster
+        """
+        bs = q_reps.shape[0]
+
+        all_scores = []
+        for i in range(bs):
+            start_idx = i * self.data_args.train_n_passages
+            end_idx = start_idx + self.data_args.train_n_passages
+            score = q_reps[i] @ p_reps[start_idx:end_idx].T
+            all_scores.append(score)
+
+        all_scores = torch.stack(all_scores)
+
+        target = torch.zeros(all_scores.size(0),
+                             device=all_scores.device,
+                             dtype=torch.long)
+
+        loss = self.loss_fn(all_scores, target)
         return loss
 
 
@@ -189,6 +211,8 @@ class DRModel(nn.Module):
                 cn3_reps = self.dist_gather_tensor(cn3_reps)
                 cn4_reps = self.dist_gather_tensor(cn4_reps)
 
+            print(f"shape of q_reps: {q_reps.shape}")
+            print(f"shape of cn0_reps: {cn0_reps.shape}")
 
             effective_bsz = self.train_args.per_device_train_batch_size * self.world_size \
                 if self.train_args.negatives_x_device \
@@ -208,20 +232,19 @@ class DRModel(nn.Module):
 
             hn_loss = self.loss_fn(scores, target)
 
-            cn0_loss = self._get_loss(q_reps, cn0_reps)
-            cn1_loss = self._get_loss(q_reps, cn1_reps)
-            cn2_loss = self._get_loss(q_reps, cn2_reps)
-            cn3_loss = self._get_loss(q_reps, cn3_reps)
-            cn4_loss = self._get_loss(q_reps, cn4_reps)
+            cn0_loss = self._get_cluster_loss(q_reps, cn0_reps)
+            cn1_loss = self._get_cluster_loss(q_reps, cn1_reps)
+            cn2_loss = self._get_cluster_loss(q_reps, cn2_reps)
+            cn3_loss = self._get_cluster_loss(q_reps, cn3_reps)
+            cn4_loss = self._get_cluster_loss(q_reps, cn4_reps)
 
             all_losses = [hn_loss, cn0_loss, cn1_loss, cn2_loss, cn3_loss, cn4_loss]
- 
+            loss = sum(all_losses)     
+
+
             if self.training and self.train_args.negatives_x_device:
                 loss = loss * self.world_size  # counter average weight reduction
                 all_losses = [l * self.world_size for l in all_losses]
-
-            loss = sum(all_losses)     
-
 
             return DROutput(
                 loss=loss,

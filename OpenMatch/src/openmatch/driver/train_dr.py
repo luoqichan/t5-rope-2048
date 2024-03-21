@@ -17,6 +17,17 @@ from transformers import AutoConfig, AutoTokenizer, HfArgumentParser, set_seed
 
 logger = logging.getLogger(__name__)
 
+def compute_metrics(evalpred):
+    _, _, _, all_loss = evalpred.predictions
+
+
+    results = {"ANCE_hard_negative_loss": all_loss[0].mean().item()}
+
+    for i in range(5):
+        results[f"cluster_negative_l{i}_loss"] = all_loss[i+1].mean().item()
+
+    return results
+
 
 def main():
     parser = HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
@@ -118,7 +129,8 @@ def main():
             max_q_len=data_args.q_max_len,
             fusion=model_args.fusion
         ),
-        delta_model=delta_model if model_args.param_efficient_method else None
+        delta_model=delta_model if model_args.param_efficient_method else None,
+        compute_metrics=compute_metrics
     )
     train_dataset.trainer = trainer
 

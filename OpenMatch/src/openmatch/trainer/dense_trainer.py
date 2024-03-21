@@ -113,8 +113,14 @@ class DRTrainer(Trainer):
                 query, passage, score = inputs
                 outputs = model(query=query, passage=passage, score=score)
         else:
-            query, passage, c_passage = inputs
-            outputs = model(query=query, passage=passage, c_passage=c_passage)
+            query, passage, cn0, cn1, cn2, cn3, cn4 = inputs
+            outputs = model(query=query, passage=passage, cn0=cn0, cn1=cn1, cn2=cn2, cn3=cn3, cn4=cn4)
+            all_losses = outputs.all_losses
+            results = {"ANCE_hard_negative_loss": all_losses[0].item()}
+
+            for i in range(5):
+                results[f"cluster_negative_l{i}_loss"] = all_losses[i+1].item()
+            self.log(results)
         return (outputs.loss, outputs) if return_outputs else outputs.loss
 
     def training_step(self, *args):
@@ -163,9 +169,6 @@ class GCDenseTrainer(DRTrainer):
 
     def training_step(self, model, inputs) -> torch.Tensor:
         model.train()
-        print("\nIN TRAINING STEP")
-        print(inputs[0].keys())
-        print(inputs[0])
         queries, passages, cn_0, cn_1, cn_2, cn_3, cn_4 = self._prepare_inputs(inputs)
         queries, passages, cn_0, cn_1, cn_2, cn_3, cn_4 = {'query': queries}, {'passage': passages}, {'cn0': cn_0}, {'cn1': cn_1}, {'cn2': cn_2}, {'cn3': cn_3}, {'cn4': cn_4}
 

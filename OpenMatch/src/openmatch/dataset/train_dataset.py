@@ -255,13 +255,18 @@ class BKTTrainDataset(TrainDatasetBase):
 
             encoded_hn_passages = self._get_encoded_passages(pos_encoded_passage, group_negatives, epoch, hashed_seed)
 
-            all_encoded_cn_passages = []
-            for level in group_cluster_negatives:
+            return_dict = {"query_": encoded_query, "passages": encoded_hn_passages}
+
+            # all_encoded_cn_passages = []
+            for enum, level in enumerate(group_cluster_negatives):
                 encoded_cn_passages = self._get_encoded_passages(pos_encoded_passage, level, epoch, hashed_seed)
-                all_encoded_cn_passages = []
+                # all_encoded_cn_passages.append(encoded_cn_passages)
+                return_dict[f"cluster_level{enum}_passages"] = encoded_cn_passages
+
  
             # Avoid name conflict with query in the original dataset
-            return {"query_": encoded_query, "passages": encoded_hn_passages, "c_passages": all_encoded_cn_passages}
+            # return {"query_": encoded_query, "passages": encoded_hn_passages, "c_passages": all_encoded_cn_passages}
+            return return_dict
 
         return process_fn
 
