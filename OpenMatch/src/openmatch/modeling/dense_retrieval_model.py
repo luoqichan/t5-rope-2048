@@ -35,6 +35,11 @@ logger = logging.getLogger(__name__)
 class DROutput(ModelOutput):
     q_reps: Tensor = None
     p_reps: Tensor = None
+    cn0_reps: Tensor=None
+    cn1_reps: Tensor=None
+    cn2_reps: Tensor=None
+    cn3_reps: Tensor=None
+    cn4_reps: Tensor=None
     loss: Tensor = None
     scores: Tensor = None
     all_losses: Tensor = None
@@ -198,7 +203,12 @@ class DRModel(nn.Module):
             if q_reps is None or p_reps is None:
                 return DROutput(
                     q_reps=q_reps,
-                    p_reps=p_reps
+                    p_reps=p_reps,
+                    cn0_reps=cn0_reps,
+                    cn1_reps=cn1_reps,
+                    cn2_reps=cn2_reps,
+                    cn3_reps=cn3_reps,
+                    cn4_reps=cn4_reps
                 )
 
             # if self.training:
@@ -210,9 +220,6 @@ class DRModel(nn.Module):
                 cn2_reps = self.dist_gather_tensor(cn2_reps)
                 cn3_reps = self.dist_gather_tensor(cn3_reps)
                 cn4_reps = self.dist_gather_tensor(cn4_reps)
-
-            print(f"shape of q_reps: {q_reps.shape}")
-            print(f"shape of cn0_reps: {cn0_reps.shape}")
 
             effective_bsz = self.train_args.per_device_train_batch_size * self.world_size \
                 if self.train_args.negatives_x_device \
@@ -238,9 +245,14 @@ class DRModel(nn.Module):
             cn3_loss = self._get_cluster_loss(q_reps, cn3_reps)
             cn4_loss = self._get_cluster_loss(q_reps, cn4_reps)
 
-            all_losses = [hn_loss, cn0_loss, cn1_loss, cn2_loss, cn3_loss, cn4_loss]
-            loss = sum(all_losses)     
-
+            all_losses = torch.tensor(
+                                        [hn_loss, cn0_loss, cn1_loss, cn2_loss, cn3_loss, cn4_loss], 
+                                        device=hn_loss.device
+                                     )
+            
+            print(f"all_losses = {all_losses}")
+            loss = hn_loss + cn0_loss + cn1_loss + cn2_loss + cn3_loss + cn4_loss   
+            print(f"loss = {loss}")
 
             if self.training and self.train_args.negatives_x_device:
                 loss = loss * self.world_size  # counter average weight reduction

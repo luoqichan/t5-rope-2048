@@ -13,12 +13,12 @@ from transformers.file_utils import is_datasets_available
 from transformers.trainer import Trainer, TRAINING_ARGS_NAME
 from transformers.trainer_pt_utils import IterableDatasetShard
 
-from ..loss import DistributedContrastiveLoss, SimpleContrastiveLoss
+from ..loss import DistributedContrastiveLoss, SimpleContrastiveLoss, DistributedClusterLoss, SimpleClusterLoss
 
 logger = logging.getLogger(__name__)
 
 try:
-    from grad_cache import GradCache
+    from ..grad_cache import GradCache
     _grad_cache_available = True
 except ModuleNotFoundError:
     _grad_cache_available = False
@@ -115,11 +115,12 @@ class DRTrainer(Trainer):
         else:
             query, passage, cn0, cn1, cn2, cn3, cn4 = inputs
             outputs = model(query=query, passage=passage, cn0=cn0, cn1=cn1, cn2=cn2, cn3=cn3, cn4=cn4)
-            all_losses = outputs.all_losses
+            all_losses = [l / self._dist_loss_scale_factor for l in outputs.all_losses]
             results = {"ANCE_hard_negative_loss": all_losses[0].item()}
 
             for i in range(5):
                 results[f"cluster_negative_l{i}_loss"] = all_losses[i+1].item()
+
             self.log(results)
         return (outputs.loss, outputs) if return_outputs else outputs.loss
 
@@ -139,12 +140,28 @@ def split_dense_inputs(model_input: dict, chunk_size: int):
     return [{arg_key: c} for c in chunked_arg_val]
 
 
-def get_dense_rep(x):
-    if x.q_reps is None:
-        return x.p_reps
-    else:
-        return x.q_reps
+# def get_dense_rep(x):
+#     if x.q_reps is None:
+#         return x.p_reps
+#     else:
+#         return x.q_reps
 
+def get_dense_rep(x):
+    if x.q_reps is not None: 
+        return x.q_reps
+    elif x.p_reps is not None: 
+        return x.p_reps
+    elif x.cn0_reps is not None:
+        return x.cn0_reps
+    elif x.cn1_reps is not None:
+        return x.cn1_reps
+    elif x.cn2_reps is not None:
+        return x.cn2_reps
+    elif x.cn3_reps is not None:
+        return x.cn3_reps
+    elif x.cn4_reps is not None:
+        return x.cn4_reps
+    else: return
 
 class GCDenseTrainer(DRTrainer):
     def __init__(self, *args, **kwargs):
@@ -154,12 +171,19 @@ class GCDenseTrainer(DRTrainer):
                 'Grad Cache package not available. You can obtain it from https://github.com/luyug/GradCache.')
         super(GCDenseTrainer, self).__init__(*args, **kwargs)
 
-        loss_fn_cls = DistributedContrastiveLoss if self.args.negatives_x_device else SimpleContrastiveLoss
+        # loss_fn_cls = DistributedContrastiveLoss if self.args.negatives_x_device else SimpleContrastiveLoss
+        loss_fn_cls = DistributedClusterLoss if self.args.negatives_x_device else SimpleClusterLoss
         loss_fn = loss_fn_cls()
 
         self.gc = GradCache(
-            models=[self.model, self.model],
-            chunk_sizes=[self.args.gc_q_chunk_size, self.args.gc_p_chunk_size],
+            models=[self.model, self.model, self.model, self.model, self.model, self.model, self.model],
+            chunk_sizes=[self.args.gc_q_chunk_size, 
+                         self.args.gc_p_chunk_size, 
+                         self.args.gc_p_chunk_size, 
+                         self.args.gc_p_chunk_size,
+                         self.args.gc_p_chunk_size, 
+                         self.args.gc_p_chunk_size, 
+                         self.args.gc_p_chunk_size],
             loss_fn=loss_fn,
             split_input_fn=split_dense_inputs,
             get_rep_fn=get_dense_rep,
@@ -172,9 +196,8 @@ class GCDenseTrainer(DRTrainer):
         queries, passages, cn_0, cn_1, cn_2, cn_3, cn_4 = self._prepare_inputs(inputs)
         queries, passages, cn_0, cn_1, cn_2, cn_3, cn_4 = {'query': queries}, {'passage': passages}, {'cn0': cn_0}, {'cn1': cn_1}, {'cn2': cn_2}, {'cn3': cn_3}, {'cn4': cn_4}
 
-
         _distributed = self.args.local_rank > -1
-        self.gc.models = [model, model]
+        self.gc.models = [model, model, model, model, model, model, model]
         loss = self.gc(queries, passages, cn_0, cn_1, cn_2, cn_3, cn_4, no_sync_except_last=_distributed)
 
         return loss / self._dist_loss_scale_factor

@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 def compute_metrics(evalpred):
     _, _, _, all_loss = evalpred.predictions
 
-
     results = {"ANCE_hard_negative_loss": all_loss[0].mean().item()}
 
     for i in range(5):
@@ -134,7 +133,7 @@ def main():
     )
     train_dataset.trainer = trainer
 
-    trainer.train()
+    trainer.train(resume_from_checkpoint=True)
     trainer.save_model()
     if trainer.is_world_process_zero():
         tokenizer.save_pretrained(training_args.output_dir)

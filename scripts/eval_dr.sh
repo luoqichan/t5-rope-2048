@@ -1,18 +1,20 @@
 #!/bin/bash
-#SBATCH --job-name=eval_dr_openmatch
+#SBATCH --job-name=eval_separatelosses
 #SBATCH --output=logs/%x-%j.out
 #SBATCH -e logs/%x-%j.err
 #SBATCH --partition=general
+#SBATCH --exclude=babel-4-28,babel-3-19
 #SBATCH --gres=gpu:A6000:2
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=200G
+#SBATCH --mem=100G
 #SBATCH --time=2-00:00:00
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
 
-model_to_eval=$1
-model_name=$(basename "$model_to_eval")
+model_to_eval="/data/user_data/luoqic/t5-rope-data/models/t5-base-maroc-documens-2048-HNCN-separateloss-debugGradCache-archive/checkpoint-1125"
+# model_name=$(basename "$model_to_eval")
+model_name="t5-base-maroc-documens-2048-HNCN-separateloss-debugGradCache-checkpoint1125"
 
 text_length=2048
 n_gpus=2
