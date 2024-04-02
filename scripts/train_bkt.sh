@@ -31,7 +31,7 @@ train_data=$train_data_folder/train.jsonl
 valid_data=$train_data_folder/val.jsonl
 
 
-trained_model_name=t5-base-marco-documents-2048-HNCN-separatelosses-debugGradeCache-cont
+trained_model_name=t5-base-marco-documents-2048-HNCN-separatelosses-debugGradeCache
 output_path=$DATA_PATH/models/$trained_model_name
 
 accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 OpenMatch/src/openmatch/driver/train_dr.py  \
@@ -60,7 +60,8 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --use_mapping_dataset False \
     --gc_p_chunk_size 24 \
     --gc_q_chunk_size 24 \
-    --negatives_x_device True 
+    --negatives_x_device True \
+    --resume_from_checkpoint True
 
 
 # embeddings_out=$DATA_PATH/data/embeddings/train/$trained_model_name

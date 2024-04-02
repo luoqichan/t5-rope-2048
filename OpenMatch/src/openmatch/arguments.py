@@ -183,6 +183,7 @@ class DRTrainingArguments(TrainingArguments):
     gc_p_chunk_size: int = field(default=32)
     distillation: bool = field(default=False, metadata={"help": "Use distillation"})
     distil_mode: str = field(default="pairwise", metadata={"help": "Distillation mode"})
+    resume_from_checkpoint: bool=field(default=False,  metadata={"help": "Resume from checkpoint"})
 
 
 @dataclass
