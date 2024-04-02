@@ -133,7 +133,7 @@ def main():
     )
     train_dataset.trainer = trainer
 
-    trainer.train(resume_from_checkpoint=True)
+    trainer.train(resume_from_checkpoint='/data/user_data/luoqic/t5-rope-data/models/t5-base-marco-documents-2048-HNCN-separatelosses-debugGradeCache/checkpoint-1125')
     trainer.save_model()
     if trainer.is_world_process_zero():
         tokenizer.save_pretrained(training_args.output_dir)

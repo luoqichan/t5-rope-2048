@@ -24,8 +24,8 @@ train_qrels=$DATA_PATH/data/marco_documents_processed/qrels.train.tsv
 train_queries=$DATA_PATH/data/marco_documents_processed/train.query.txt
 corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
 
-# initial_model=$DATA_PATH/models/t5-base-marco-documents-2048
-initial_model=$DATA_PATH/models/t5-base-marco-documents-2048-HNCN-separatelosses-debugGradeCache/checkpoint-1125
+initial_model=$DATA_PATH/models/t5-base-marco-documents-2048
+# initial_model=$DATA_PATH/models/t5-base-marco-documents-2048-HNCN-separatelosses-debugGradeCache/
 train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-bkt
 train_data=$train_data_folder/train.jsonl
 valid_data=$train_data_folder/val.jsonl
@@ -36,7 +36,7 @@ output_path=$DATA_PATH/models/$trained_model_name
 
 accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 OpenMatch/src/openmatch/driver/train_dr.py  \
     --output_dir $output_path \
-    --model_name_or_path $output_path \
+    --model_name_or_path $initial_model \
     --do_train \
     --save_steps 125  \
     --eval_steps 125  \
