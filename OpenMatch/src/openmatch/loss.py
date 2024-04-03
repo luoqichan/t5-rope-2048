@@ -75,11 +75,11 @@ class SimpleClusterLoss:
         cn3_loss = self._get_cluster_loss(q, cn3, target_per_qry)
         cn4_loss = self._get_cluster_loss(q, cn4, target_per_qry)
 
-        all_losses = torch.tensor(
-                                    [hn_loss, cn0_loss, cn1_loss, cn2_loss, cn3_loss, cn4_loss], 
-                                    device=hn_loss.device,
-                                    requires_grad=True
-                                    )
+        # all_losses = torch.tensor(
+        #                             [hn_loss, cn0_loss, cn1_loss, cn2_loss, cn3_loss, cn4_loss], 
+        #                             device=hn_loss.device,
+        #                             requires_grad=True
+        #                             )
 
         loss = hn_loss + cn0_loss + cn1_loss + cn2_loss + cn3_loss + cn4_loss
 
