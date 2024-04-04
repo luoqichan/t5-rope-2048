@@ -105,6 +105,9 @@ class DataArguments:
     eval_path: str = field(
         default=None, metadata={"help": "Path to eval file"}
     )
+    dev_path: str = field(
+        default=None, metadata={"help": "Path to dev file"}
+    )
     query_path: str = field(
         default=None, metadata={"help": "Path to query file"}
     )

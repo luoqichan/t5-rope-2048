@@ -31,6 +31,7 @@ class TrainDatasetBase:
         data_args: DataArguments,
         trainer: DRTrainer = None,
         is_eval: bool = False,
+        is_dev: bool = False,
         shuffle_seed: int = None,
         cache_dir: str = None,
         maxp: int = None,
@@ -42,6 +43,7 @@ class TrainDatasetBase:
         self.p_max_len = data_args.p_max_len
         self.trainer = trainer
         self.is_eval = is_eval
+        self.is_dev = is_dev
         self.maxp = maxp
         self.fusion = fusion
         self._prepare_data(data_args, shuffle_seed, cache_dir)
@@ -265,7 +267,7 @@ class BKTTrainDataset(TrainDatasetBase):
 
  
             # Avoid name conflict with query in the original dataset
-            # return {"query_": encoded_query, "passages": encoded_hn_passages, "c_passages": all_encoded_cn_passages}
+            # return {"query_": encoded_query, "passages": encoded_hn_passages, "cluster_level[x]": encoded_cn_passages}
             return return_dict
 
         return process_fn

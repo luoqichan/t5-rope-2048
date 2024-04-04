@@ -106,24 +106,6 @@ class DRModel(nn.Module):
         }
         return config
     
-    def _get_loss(self, q_reps, p_reps):
-        bsize = q_reps.shape[0]
-        scores = torch.matmul(q_reps, p_reps.transpose(0, 1))
-
-        if self.maxp:
-            scores = torch.max(scores.view(scores.size(0),int(scores.size(1)/self.maxp), self.maxp), dim=2).values
-
-        target = torch.arange(
-            scores.size(0),
-            device=scores.device,
-            dtype=torch.long
-        )
-        target = target * self.data_args.train_n_passages
-
-        loss = self.loss_fn(scores, target)
-        return loss
-    
-
     def _get_cluster_loss(self, q_reps, p_reps):
         """ No in-batch negatives for cluster
         """
@@ -263,7 +245,12 @@ class DRModel(nn.Module):
                 all_losses=all_losses,
                 scores=scores,
                 q_reps=q_reps,
-                p_reps=p_reps
+                p_reps=p_reps, 
+                cn0_reps=cn0_reps, 
+                cn1_reps=cn1_reps,
+                cn2_reps=cn2_reps,
+                cn3_reps=cn3_reps,
+                cn4_reps=cn4_reps
                 )
 
     def encode(self, items, model, head, is_q=False, fusion=None):

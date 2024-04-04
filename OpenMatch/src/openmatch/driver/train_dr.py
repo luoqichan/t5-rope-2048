@@ -13,7 +13,8 @@ from OpenMatch.src.openmatch.modeling import DRModel
 from OpenMatch.src.openmatch.trainer import DRTrainer as Trainer
 from OpenMatch.src.openmatch.trainer import GCDenseTrainer
 from OpenMatch.src.openmatch.utils import get_delta_model_class
-from transformers import AutoConfig, AutoTokenizer, HfArgumentParser, set_seed
+from transformers import AutoConfig, AutoTokenizer, HfArgumentParser, set_seed, TrainerCallback
+from copy import deepcopy
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,18 @@ def compute_metrics(evalpred):
         results[f"cluster_negative_l{i}_loss"] = all_loss[i+1].mean().item()
 
     return results
+
+class CustomCallback(TrainerCallback):
+    
+    def __init__(self, trainer) -> None:
+        super().__init__()
+        self._trainer = trainer
+    
+    def on_evaluate(self, args, state, control, **kwargs):
+        if control.should_evaluate:
+            control_copy = deepcopy(control)
+            self._trainer.evaluate(eval_dataset=self._trainer.dev_dataset, metric_key_prefix="dev/")
+            return control_copy
 
 
 def main():
@@ -116,6 +129,16 @@ def main():
         fusion=model_args.fusion
     ) if data_args.eval_path is not None else None
 
+    dev_dataset = train_dataset_cls(
+        tokenizer, 
+        data_args, 
+        is_dev=True,
+        cache_dir=data_args.data_cache_dir or model_args.cache_dir,
+        maxp=model_args.maxp,
+        fusion=model_args.fusion
+    ) if data_args.dev_path is not None else None
+
+
 
     trainer_cls = GCDenseTrainer if training_args.grad_cache else Trainer
     trainer = trainer_cls(
@@ -124,6 +147,7 @@ def main():
         tokenizer=tokenizer,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
+        # dev_dataset=dev_dataset,
         data_collator=QPCollator(
             tokenizer,
             max_p_len=data_args.p_max_len,
@@ -135,7 +159,7 @@ def main():
     )
     train_dataset.trainer = trainer
 
-    trainer.train(resume_from_checkpoint=True)
+    trainer.train()
     trainer.save_model()
     if trainer.is_world_process_zero():
         tokenizer.save_pretrained(training_args.output_dir)
