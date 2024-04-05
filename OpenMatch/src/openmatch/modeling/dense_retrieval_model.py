@@ -232,9 +232,7 @@ class DRModel(nn.Module):
                                         device=hn_loss.device
                                      )
             
-            print(f"all_losses = {all_losses}")
             loss = hn_loss + cn0_loss + cn1_loss + cn2_loss + cn3_loss + cn4_loss   
-            print(f"loss = {loss}")
 
             if self.training and self.train_args.negatives_x_device:
                 loss = loss * self.world_size  # counter average weight reduction

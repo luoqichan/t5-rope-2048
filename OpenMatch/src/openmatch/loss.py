@@ -75,15 +75,9 @@ class SimpleClusterLoss:
         cn3_loss = self._get_cluster_loss(q, cn3, target_per_qry)
         cn4_loss = self._get_cluster_loss(q, cn4, target_per_qry)
 
-        # all_losses = torch.tensor(
-        #                             [hn_loss, cn0_loss, cn1_loss, cn2_loss, cn3_loss, cn4_loss], 
-        #                             device=hn_loss.device,
-        #                             requires_grad=True
-        #                             )
-
         loss = hn_loss + cn0_loss + cn1_loss + cn2_loss + cn3_loss + cn4_loss
 
-        return loss
+        return loss, [hn_loss, cn0_loss, cn1_loss, cn2_loss, cn3_loss, cn4_loss]
 
 class DistributedClusterLoss(SimpleClusterLoss):
     def __init__(self, scale_loss: bool = True):
@@ -94,6 +88,7 @@ class DistributedClusterLoss(SimpleClusterLoss):
         self.scale_loss = scale_loss
 
     def __call__(self,  q: Tensor, p: Tensor, cn0: Tensor, cn1: Tensor, cn2: Tensor, cn3: Tensor, cn4: Tensor, **kwargs):
+        print("in distributedclusterloss __call__")
         dist_q = self.gather_tensor(q)
         dist_p = self.gather_tensor(p)
         dist_cn0 = self.gather_tensor(cn0)
@@ -102,10 +97,11 @@ class DistributedClusterLoss(SimpleClusterLoss):
         dist_cn3 = self.gather_tensor(cn3)
         dist_cn4 = self.gather_tensor(cn4)
 
-        loss = super().__call__(dist_q, dist_p, dist_cn0, dist_cn1, dist_cn2, dist_cn3, dist_cn4,  **kwargs)
+        loss, all_loss = super().__call__(dist_q, dist_p, dist_cn0, dist_cn1, dist_cn2, dist_cn3, dist_cn4,  **kwargs)
         if self.scale_loss:
             loss = loss * self.word_size
-        return loss
+            all_loss = [l * self.word_size for l in all_loss]
+        return loss, all_loss
 
     def gather_tensor(self, t):
         gathered = [torch.empty_like(t) for _ in range(self.word_size)]

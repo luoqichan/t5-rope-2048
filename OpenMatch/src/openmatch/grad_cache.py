@@ -12,7 +12,6 @@ from grad_cache.context_managers import RandContext
 
 logger = logging.getLogger(__name__)
 
-
 class GradCache:
     """
     Gradient Cache class. Implements input chunking, first graph-less forward pass, Gradient Cache creation, second
@@ -163,14 +162,15 @@ class GradCache:
         :param loss_kwargs: Keyword arguments input to the loss function.
         :return: the loss tensor.
         """
- 
-        loss = self.loss_fn(*reps, **loss_kwargs)
-        return loss
+
+        loss, all_losses = self.loss_fn(*reps, **loss_kwargs)
+        
+        return loss, all_losses
 
     def forward_no_grad(
             self,
             model: nn.Module,
-            model_inputs,
+            model_inputs
     ) -> [Tensor, List[RandContext]]:
         """
         The first forward pass without gradient computation.
@@ -200,7 +200,7 @@ class GradCache:
         """
         reps = [r.detach().requires_grad_() for r in reps]
         with autocast() if self.fp16 else nullcontext():
-            loss = self.compute_loss(*reps, **loss_kwargs)
+            loss, all_losses = self.compute_loss(*reps, **loss_kwargs)
 
         if self.fp16:
             self.scaler.scale(loss).backward()
@@ -209,7 +209,7 @@ class GradCache:
 
         cache = [r.grad for r in reps]
 
-        return cache, loss.detach()
+        return cache, loss.detach(), [l.detach() for l in all_losses]
 
     def forward_backward(
             self,
@@ -272,12 +272,13 @@ class GradCache:
             model_reps, rnd_states = self.forward_no_grad(model, x)
             all_reps.append(model_reps)
             all_rnd_states.append(rnd_states)
-            
-        cache, loss = self.build_cache(*all_reps, **loss_kwargs)
+
+        cache, loss, all_losses = self.build_cache(*all_reps, **loss_kwargs)
         cache = [c.split(chunk_size) for c, chunk_size in zip(cache, self.chunk_sizes)]
 
         for model, x, model_cache, rnd_states in zip(
                 self.models, model_inputs, cache, all_rnd_states):
             self.forward_backward(model, x, model_cache, rnd_states, no_sync_except_last=no_sync_except_last)
 
-        return loss
+        # GC's __call__ method (i.e. L201 self.gc() invokes this loss)
+        return loss, all_losses

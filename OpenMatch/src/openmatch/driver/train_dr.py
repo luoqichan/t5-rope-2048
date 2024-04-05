@@ -19,26 +19,15 @@ from copy import deepcopy
 logger = logging.getLogger(__name__)
 
 def compute_metrics(evalpred):
-    _, _, _, all_loss = evalpred.predictions
+    print(f"in compute_metrics, all_loss: {evalpred.predictions[-1].shape}")
+    all_loss = evalpred.predictions[-1].reshape(-1, 6).mean(axis=1)
 
-    results = {"ANCE_hard_negative_loss": all_loss[0].mean().item()}
+    results = {"HardNegative_loss": all_loss[0].item()}
 
-    for i in range(5):
-        results[f"cluster_negative_l{i}_loss"] = all_loss[i+1].mean().item()
+    for i in range(1, all_loss.shape[0]):
+        results[f"ClusterNegative-level{i}_loss"] = all_loss[i].item()
 
     return results
-
-class CustomCallback(TrainerCallback):
-    
-    def __init__(self, trainer) -> None:
-        super().__init__()
-        self._trainer = trainer
-    
-    def on_evaluate(self, args, state, control, **kwargs):
-        if control.should_evaluate:
-            control_copy = deepcopy(control)
-            self._trainer.evaluate(eval_dataset=self._trainer.dev_dataset, metric_key_prefix="dev/")
-            return control_copy
 
 
 def main():
@@ -147,7 +136,6 @@ def main():
         tokenizer=tokenizer,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        # dev_dataset=dev_dataset,
         data_collator=QPCollator(
             tokenizer,
             max_p_len=data_args.p_max_len,
