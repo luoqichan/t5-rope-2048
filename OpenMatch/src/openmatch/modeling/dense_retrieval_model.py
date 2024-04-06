@@ -227,28 +227,24 @@ class DRModel(nn.Module):
             cn3_loss = self._get_cluster_loss(q_reps, cn3_reps)
             cn4_loss = self._get_cluster_loss(q_reps, cn4_reps)
 
-            all_losses = torch.tensor(
-                                        [hn_loss, cn0_loss, cn1_loss, cn2_loss, cn3_loss, cn4_loss], 
-                                        device=hn_loss.device
+            loss_components = torch.tensor(
+                                        [[hn_loss, cn0_loss, cn1_loss, cn2_loss, cn3_loss, cn4_loss]], 
+                                        device=hn_loss.device,
+                                        dtype=torch.float
                                      )
             
             loss = hn_loss + cn0_loss + cn1_loss + cn2_loss + cn3_loss + cn4_loss   
 
             if self.training and self.train_args.negatives_x_device:
                 loss = loss * self.world_size  # counter average weight reduction
-                all_losses = [l * self.world_size for l in all_losses]
+                loss_components = self.word_size * loss_components
 
             return DROutput(
                 loss=loss,
-                all_losses=all_losses,
+                all_losses=loss_components,
                 scores=scores,
                 q_reps=q_reps,
                 p_reps=p_reps, 
-                cn0_reps=cn0_reps, 
-                cn1_reps=cn1_reps,
-                cn2_reps=cn2_reps,
-                cn3_reps=cn3_reps,
-                cn4_reps=cn4_reps
                 )
 
     def encode(self, items, model, head, is_q=False, fusion=None):

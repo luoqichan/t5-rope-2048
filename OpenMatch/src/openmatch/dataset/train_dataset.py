@@ -60,6 +60,9 @@ class TrainDatasetBase:
 
 
 class StreamTrainDatasetMixin(IterableDataset):
+    def __init__(self, *args, **kwargs):
+        super(StreamTrainDatasetMixin, self).__init__(*args, **kwargs)
+        self.distributed = True
 
     def _prepare_data(self, data_args, shuffle_seed, cache_dir):
         super()._prepare_data(data_args, shuffle_seed, cache_dir)

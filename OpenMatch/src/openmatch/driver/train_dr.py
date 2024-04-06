@@ -16,17 +16,17 @@ from OpenMatch.src.openmatch.utils import get_delta_model_class
 from transformers import AutoConfig, AutoTokenizer, HfArgumentParser, set_seed, TrainerCallback
 from copy import deepcopy
 
+
 logger = logging.getLogger(__name__)
 
 def compute_metrics(evalpred):
-    print(f"in compute_metrics, all_loss: {evalpred.predictions[-1].shape}")
-    all_loss = evalpred.predictions[-1].reshape(-1, 6).mean(axis=1)
+    loss_components = evalpred.predictions.mean(axis=0)
+    print(f"in compute_metrics, evalpred={loss_components}")
 
-    results = {"HardNegative_loss": all_loss[0].item()}
+    results = {"HardNegative_loss": loss_components[0].item()}
 
-    for i in range(1, all_loss.shape[0]):
-        results[f"ClusterNegative-level{i}_loss"] = all_loss[i].item()
-
+    for i in range(1, loss_components.shape[0]):
+        results[f"ClusterNegative-level{i}_loss"] = loss_components[i].item()
     return results
 
 
@@ -109,7 +109,7 @@ def main():
         fusion=model_args.fusion
     )
 
-    eval_dataset = train_dataset_cls(
+    eval_dataset = MappingBKTTrainDataset(
         tokenizer, 
         data_args, 
         is_eval=True, 
@@ -117,17 +117,6 @@ def main():
         maxp=model_args.maxp,
         fusion=model_args.fusion
     ) if data_args.eval_path is not None else None
-
-    dev_dataset = train_dataset_cls(
-        tokenizer, 
-        data_args, 
-        is_dev=True,
-        cache_dir=data_args.data_cache_dir or model_args.cache_dir,
-        maxp=model_args.maxp,
-        fusion=model_args.fusion
-    ) if data_args.dev_path is not None else None
-
-
 
     trainer_cls = GCDenseTrainer if training_args.grad_cache else Trainer
     trainer = trainer_cls(
@@ -151,7 +140,6 @@ def main():
     trainer.save_model()
     if trainer.is_world_process_zero():
         tokenizer.save_pretrained(training_args.output_dir)
-
 
 if __name__ == "__main__":
     main()

@@ -88,7 +88,7 @@ class DistributedClusterLoss(SimpleClusterLoss):
         self.scale_loss = scale_loss
 
     def __call__(self,  q: Tensor, p: Tensor, cn0: Tensor, cn1: Tensor, cn2: Tensor, cn3: Tensor, cn4: Tensor, **kwargs):
-        print("in distributedclusterloss __call__")
+        # print("in distributedclusterloss __call__")
         dist_q = self.gather_tensor(q)
         dist_p = self.gather_tensor(p)
         dist_cn0 = self.gather_tensor(cn0)

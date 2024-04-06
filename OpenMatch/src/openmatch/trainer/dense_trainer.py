@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader
 from transformers.file_utils import is_datasets_available
 from ..trainer_imports import * 
 from transformers.trainer import Trainer, TRAINING_ARGS_NAME, TRAINER_STATE_NAME
-from transformers.trainer_pt_utils import IterableDatasetShard
 from ..loss import DistributedContrastiveLoss, SimpleContrastiveLoss, DistributedClusterLoss, SimpleClusterLoss
 
 logger = logging.getLogger(__name__)
@@ -74,6 +73,7 @@ class DRTrainer(Trainer):
             train_dataset = self._remove_unused_columns(train_dataset, description="training")
 
         if isinstance(train_dataset, torch.utils.data.IterableDataset):
+            print(f"IS ITERABLE DATASET")
             if self.args.world_size > 1:
                 train_dataset = IterableDatasetShard(
                     train_dataset,
@@ -115,8 +115,9 @@ class DRTrainer(Trainer):
         else:
             query, passage, cn0, cn1, cn2, cn3, cn4 = inputs
             outputs = model(query=query, passage=passage, cn0=cn0, cn1=cn1, cn2=cn2, cn3=cn3, cn4=cn4)
+            # print(f"In compute_loss, all_losses: {outputs.all_losses}, summed: {outputs.all_losses.sum()}, outputs.loss: {outputs.loss}")
 
-        return (outputs.loss, outputs) if return_outputs else outputs.loss
+        return (outputs.loss, {"loss_components": outputs.all_losses}) if return_outputs else outputs.loss
 
     def training_step(self, *args):
         return super(DRTrainer, self).training_step(*args) / self._dist_loss_scale_factor
@@ -510,9 +511,9 @@ class DRTrainer(Trainer):
             # all_gather + mean() to get average loss over all processes
             tr_loss_scalar = self._nested_gather(tr_loss).mean().item()
             tr_loss_components_gathered = self._nested_gather(tr_loss_components).reshape((-1, 6))
-            print(f"In _maybe_log_save_evaluated, tr_loss_components_gathered: {tr_loss_components_gathered}")
+            # print(f"In _maybe_log_save_evaluated, tr_loss_components_gathered: {tr_loss_components_gathered}")
             tr_loss_components_gathered = tr_loss_components_gathered.mean(axis=0)
-            print(f"In _maybe_log_save_evaluated, tr_loss_components_gathered (meaned): {tr_loss_components_gathered}")
+            # print(f"In _maybe_log_save_evaluated, tr_loss_components_gathered (meaned): {tr_loss_components_gathered}")
 
 
             # reset tr_loss to zero
@@ -541,6 +542,8 @@ class DRTrainer(Trainer):
         if self.control.should_save:
             self._save_checkpoint(model, trial, metrics=metrics)
             self.control = self.callback_handler.on_save(self.args, self.state, self.control)
+
+
 
 def split_dense_inputs(model_input: dict, chunk_size: int):
     assert len(model_input) == 1
@@ -587,7 +590,6 @@ class GCDenseTrainer(DRTrainer):
 
         # loss_fn_cls = DistributedContrastiveLoss if self.args.negatives_x_device else SimpleContrastiveLoss
         loss_fn_cls = DistributedClusterLoss if self.args.negatives_x_device else SimpleClusterLoss
-        print(f"loss function: {loss_fn_cls}")
         loss_fn = loss_fn_cls()
 
         self.gc = GradCache(
@@ -616,4 +618,4 @@ class GCDenseTrainer(DRTrainer):
         loss, all_losses = self.gc(queries, passages, cn_0, cn_1, cn_2, cn_3, cn_4, no_sync_except_last=_distributed)
 
         return loss / self._dist_loss_scale_factor, [l / self._dist_loss_scale_factor for l in all_losses]
-    
+

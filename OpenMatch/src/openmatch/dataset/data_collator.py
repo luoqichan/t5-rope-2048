@@ -65,20 +65,6 @@ class QPCollator(DataCollatorWithPadding):
 
             all_collated.append(c_collated)
 
-        # for c in cc: 
-        #     if isinstance(c[0], list):
-        #         c = sum(c, [])
-            
-        #     c_collated = self.tokenizer.pad(
-        #         c, 
-        #         padding='max_length',
-        #         max_length=self.max_p_len,
-        #         return_tensors="pt"
-        #     )
-
-        #     all_collated.append(c_collated)
-            
-
         if self.fusion:
             d_collated['input_ids'] = concatenate_tensors_gradcache_fusion(d_collated['input_ids'], self.fusion)
             d_collated['attention_mask'] = concatenate_tensors_gradcache_fusion(d_collated['attention_mask'], self.fusion)
