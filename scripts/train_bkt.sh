@@ -16,6 +16,7 @@ export WANDB_PROJECT=t5-rope-bkt-hncn-separate-loss
 
 mkdir -p /scratch/luoqic
 
+
 split=documents
 text_length=2048
 n_gpus=4
