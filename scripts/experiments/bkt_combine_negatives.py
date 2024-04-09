@@ -2,36 +2,70 @@ import json
 from tqdm import tqdm
 from argparse import ArgumentParser
 
-
-
 parser = ArgumentParser()
-parser.add_argument('--negatives_dir', type=str, required=True)
+parser.add_argument('--hard_negatives_dir', type=str, required=True)
+parser.add_argument('--cluster_negatives_dir', type=str, required=True)
+parser.add_argument('--save_dir', type=str, required=True)
 
 args = parser.parse_args()
-pdir = args.negatives_dir
+hn_dir = args.hard_negatives_dir
+cn_dir = args.cluster_negatives_dir
+save_dir = args.save_dir
 
-print("Loading hard negatives...")
-combined_negatives = {}
-count = 0
-with open(f"{pdir}/full.jsonl", "r") as hn:
+
+print("Loading cluster negatives...")
+hn_lookup = {} # {query_tokens: {record}} 
+with open(f"{hn_dir}/train.jsonl", "r") as hn:
     for i in tqdm(hn):
         line = json.loads(i)
         k = "-".join([str(x) for x in line["query"]])
-        combined_negatives[k] = line
+        hn_lookup[k] = line
 
-print("Loading and combining cluster_negatives...")
-with open(f"{pdir}/full.cn.jsonl", "r") as cn:
-    for i in tqdm(cn): 
+with open(f"{hn_dir}/val.jsonl", "r") as hn:
+    for i in tqdm(hn):
         line = json.loads(i)
         k = "-".join([str(x) for x in line["query"]])
-        combined_negatives[k]["negatives"][5:] = line["negatives"][:4]
+        hn_lookup[k] = line
 
+print("Loading and combining negatives...")
 
-print("Writing and saving to file...")
-with open(f"{pdir}/full.collated.jsonl", "w") as wf:
-    for _, dat in tqdm(combined_negatives.items()):
-        json.dump(dat, wf)
-        wf.write("\n")
+val_written = 0
+train_written = 0
+with open(f"{save_dir}/val.jsonl", "w") as wf:
+    with open(f"{cn_dir}/val.jsonl", "r") as cn:
+        for i in tqdm(cn): 
+            line = json.loads(i)
+            k = "-".join([str(x) for x in line["query"]])
+
+            record = hn_lookup[k]
+            record["cluster_negatives"] = line["cluster_negatives"]
+
+            json.dump(line, wf)
+            wf.write("\n")
+
+            removed = hn_lookup.pop(k)
+            val_written += 1
+
+with open(f"{save_dir}/train.jsonl", "w") as wf:
+    with open(f"{cn_dir}/train.jsonl", "r") as cn:
+        for i in tqdm(cn): 
+            line = json.loads(i)
+            k = "-".join([str(x) for x in line["query"]])
+
+            try:
+                record = hn_lookup[k]
+                record["cluster_negatives"] = line["cluster_negatives"]
+
+                json.dump(line, wf)
+                wf.write("\n")
+
+                removed = hn_lookup.pop(k)
+                train_written += 1
+            except: 
+                print(f"{k} not in hn_lookup")
+
+print(f"{val_written} lines written to val.jsonl\n{train_written} lines written to train.jsonl")
+
 
 
 
