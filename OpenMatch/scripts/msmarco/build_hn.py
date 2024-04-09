@@ -110,8 +110,8 @@ shard_id = 0
 f = None
 os.makedirs(args.save_to, exist_ok=True)
 
-# pbar = tqdm(load_ranking(args.hn_file, qrel, args.n_sample, args.depth, args.split_sentences))
-pbar = tqdm(load_processed_ranking(args.hn_file, qrel, args.n_sample, args.depth, args.split_sentences))
+pbar = tqdm(load_ranking(args.hn_file, qrel, args.n_sample, args.depth, args.split_sentences))
+# pbar = tqdm(load_processed_ranking(args.hn_file, qrel, args.n_sample, args.depth, args.split_sentences))
 with Pool() as p:
     for x in p.imap(processor.process_one, pbar, chunksize=args.mp_chunk_size):
         counter += 1
