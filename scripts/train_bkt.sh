@@ -65,7 +65,8 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --use_mapping_dataset True \
     --gc_p_chunk_size 24 \
     --gc_q_chunk_size 24 \
-    --negatives_x_device True 
+    --negatives_x_device True \
+    --data_cache_dir /scratch/luoqic
 
 # embeddings_out=$DATA_PATH/data/embeddings/train/$trained_model_name
 # run_save=$DATA_PATH/data/negatives/$trained_model_name
