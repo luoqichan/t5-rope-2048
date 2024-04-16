@@ -14,8 +14,6 @@ from OpenMatch.src.openmatch.trainer import DRTrainer as Trainer
 from OpenMatch.src.openmatch.trainer import GCDenseTrainer
 from OpenMatch.src.openmatch.utils import get_delta_model_class
 from transformers import AutoConfig, AutoTokenizer, HfArgumentParser, set_seed, TrainerCallback
-from copy import deepcopy
-
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +88,8 @@ def main():
         config=config,
         cache_dir=model_args.cache_dir,
     )
+
+
 
     if model_args.param_efficient_method:
         model_class = get_delta_model_class(model_args.param_efficient_method)
