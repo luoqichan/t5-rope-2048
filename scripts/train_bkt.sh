@@ -29,13 +29,13 @@ corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
 negatives=$DATA_PATH/data/marco_documents_processed/train.negatives.tsv
 
 initial_model=$DATA_PATH/models/t5-base-marco-documents-2048
-trained_model_name=t5-base-marco-$split-$text_length-self-hn-1-replicate
+trained_model_name=t5-base-marco-$split-$text_length-HNCN-separatelosses-hn1data
 
-train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-self-hn-1
-train_data=$train_data_folder/train.jsonl
-valid_data=$train_data_folder/val.jsonl
-# train_data=/compute/shire-1-6/luoqic/train.jsonl
-# valid_data=/compute/shire-1-6/luoqic/val.jsonl 
+# train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-self-hn-1
+# train_data=$train_data_folder/train.jsonl
+# valid_data=$train_data_folder/val.jsonl
+train_data=/compute/shire-1-6/luoqic/t5-rope/train.jsonl
+valid_data=/compute/shire-1-6/luoqic/t5-rope/val.jsonl 
 
 output_path=$DATA_PATH/models/$trained_model_name
 
