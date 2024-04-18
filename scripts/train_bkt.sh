@@ -5,9 +5,9 @@
 #SBATCH --exclude=babel-4-28
 #SBATCH --partition=long
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=128G
-#SBATCH --gres=gpu:A6000:4
-#SBATCH --time=7-00:00:00
+#SBATCH --mem=32G
+#SBATCH --gres=gpu:A6000:2
+#SBATCH --time=1:00:00
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
@@ -20,7 +20,7 @@ export WANDB_PROJECT=t5-rope-bkt-debug
 
 split=documents
 text_length=2048
-n_gpus=4
+n_gpus=2
 
 
 train_qrels=$DATA_PATH/data/marco_documents_processed/qrels.train.tsv
@@ -45,9 +45,10 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --save_total_limit 2 \
     --do_train \
     --save_steps 125  \
+    --max_steps 2 \
     --eval_steps 125  \
     --fp16 \
-    --train_path $train_data  \
+    --train_path $valid_data  \
     --eval_path $valid_data  \
     --per_device_train_batch_size 128 \
     --per_device_eval_batch_size 4 \
