@@ -5,9 +5,9 @@
 #SBATCH --exclude=babel-4-28
 #SBATCH --partition=long
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=32G
-#SBATCH --gres=gpu:A6000:2
-#SBATCH --time=1:00:00
+#SBATCH --mem=128G
+#SBATCH --gres=gpu:A6000:4
+#SBATCH --time=2-00:00:00
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
@@ -20,7 +20,7 @@ export WANDB_PROJECT=t5-rope-bkt-debug
 
 split=documents
 text_length=2048
-n_gpus=2
+n_gpus=4
 
 
 train_qrels=$DATA_PATH/data/marco_documents_processed/qrels.train.tsv
@@ -34,8 +34,8 @@ trained_model_name=t5-base-marco-$split-$text_length-HNCN-separatelosses-hn1data
 # train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-self-hn-1
 # train_data=$train_data_folder/train.jsonl
 # valid_data=$train_data_folder/val.jsonl
-train_data=/compute/shire-1-6/luoqic/t5-rope-hncn/train.jsonl
-valid_data=/compute/shire-1-6/luoqic/t5-rope-hncn/val.jsonl 
+train_data=/compute/babel-4-7/luoqic/t5-rope-hncn-updated/train.jsonl
+valid_data=/compute/babel-4-7/luoqic/t5-rope-hncn-updated/val.jsonl
 
 output_path=$DATA_PATH/models/$trained_model_name
 
@@ -48,7 +48,7 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --max_steps 2 \
     --eval_steps 125  \
     --fp16 \
-    --train_path $valid_data  \
+    --train_path $train_data  \
     --eval_path $valid_data  \
     --per_device_train_batch_size 128 \
     --per_device_eval_batch_size 4 \
