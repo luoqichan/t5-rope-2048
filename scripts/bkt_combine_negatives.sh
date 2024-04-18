@@ -12,8 +12,9 @@ eval "$(conda shell.bash hook)"
 conda activate openmatch
 
 hn_dir=/data/user_data/luoqic/t5-rope-data/data/training_data/t5-base-marco-documents-2048-self-hn-1
-cn_dir=/compute/shire-1-6/luoqic
-save_dir=/compute/shire-1-6/luoqic/t5-rope-hn
+# cn_dir=/compute/shire-1-6/luoqic
+cn_dir=/compute/babel-4-7/luoqic/t5-base-marco-documents-2048-bkt-hncn
+save_dir=/compute/babel-4-7/luoqic/t5-rope-hncn-updated
 
 mkdir -p $save_dir
 
