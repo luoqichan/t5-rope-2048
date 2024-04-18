@@ -34,14 +34,15 @@ trained_model_name=t5-base-marco-$split-$text_length-HNCN-separatelosses-hn1data
 # train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-self-hn-1
 # train_data=$train_data_folder/train.jsonl
 # valid_data=$train_data_folder/val.jsonl
-train_data=/compute/shire-1-6/luoqic/t5-rope/train.jsonl
-valid_data=/compute/shire-1-6/luoqic/t5-rope/val.jsonl 
+train_data=/compute/shire-1-6/luoqic/t5-rope-hncn/train.jsonl
+valid_data=/compute/shire-1-6/luoqic/t5-rope-hncn/val.jsonl 
 
 output_path=$DATA_PATH/models/$trained_model_name
 
 accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 OpenMatch/src/openmatch/driver/train_dr.py  \
     --output_dir $output_path \
     --model_name_or_path $initial_model \
+    --save_total_limit 2 \
     --do_train \
     --save_steps 125  \
     --eval_steps 125  \
