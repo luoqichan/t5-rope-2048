@@ -110,13 +110,13 @@ shard_id = 0
 f = None
 os.makedirs(args.save_to, exist_ok=True)
 
-pbar = tqdm(load_ranking(args.hn_file, qrel, args.n_sample, args.depth, args.split_sentences))
-# pbar = tqdm(load_processed_ranking(args.hn_file, qrel, args.n_sample, args.depth, args.split_sentences))
+# pbar = tqdm(load_ranking(args.hn_file, qrel, args.n_sample, args.depth, args.split_sentences))
+pbar = tqdm(load_processed_ranking(args.hn_file, qrel, args.n_sample, args.depth, args.split_sentences))
 with Pool() as p:
     for x in p.imap(processor.process_one, pbar, chunksize=args.mp_chunk_size):
         counter += 1
         if f is None:
-            f = open(os.path.join(args.save_to, f'split{shard_id:02d}.hn.jsonl'), 'w')
+            f = open(os.path.join(args.save_to, f'split{shard_id:02d}.hncn.jsonl'), 'w')
             pbar.set_description(f'split - {shard_id:02d}')
         f.write(x + '\n')
 
