@@ -29,8 +29,10 @@ initial_model=$DATA_PATH/models/t5-base-marco-documents-2048
 # train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-bkt
 # train_data=$train_data_folder/train.jsonl
 # valid_data=$train_data_folder/val.jsonl
-train_data=/compute/shire-1-6/luoqic/t5-rope-hn/train.jsonl
-valid_data=/compute/shire-1-6/luoqic/t5-rope-hn/val.jsonl
+# train_data=/compute/shire-1-6/luoqic/t5-rope-hn/train.jsonl
+# valid_data=/compute/shire-1-6/luoqic/t5-rope-hn/val.jsonl
+train_data=/compute/babel-4-7/luoqic/t5-rope-hncn-updated/train.jsonl
+valid_data=/compute/babel-4-7/luoqic/t5-rope-hncn-updated/val.jsonl
 
 trained_model_name=t5-base-marco-documents-2048-HNCN-separatelosses-debug-hnlossonly
 output_path=$DATA_PATH/models/$trained_model_name
@@ -43,7 +45,7 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --eval_steps 125  \
     --save_total_limit 2 \
     --fp16 \
-    --train_path $valid_data  \
+    --train_path $train_data  \
     --eval_path $valid_data  \
     --per_device_train_batch_size 128 \
     --per_device_eval_batch_size 4 \
@@ -53,7 +55,7 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --p_max_len $text_length  \
     --num_train_epochs 2  \
     --report_to wandb \
-    --logging_steps 1 \
+    --logging_steps 10 \
     --run_name $trained_model_name \
     --evaluation_strategy steps \
     --dataloader_num_workers 4 \
