@@ -40,7 +40,6 @@ with open(f"{save_dir}/val.jsonl", "w") as wf:
             record = hn_lookup[k]
             record["cluster_negatives"] = line["cluster_negatives"]
 
-            # json.dump(line, wf) # wtf this is wrong!!!!!!!!
             json.dump(record, wf)
             wf.write("\n")
 
@@ -56,6 +55,8 @@ with open(f"{save_dir}/train.jsonl", "w") as wf:
             try:
                 record = hn_lookup[k]
                 record["cluster_negatives"] = line["cluster_negatives"]
+
+
 
                 json.dump(record, wf)
                 wf.write("\n")
