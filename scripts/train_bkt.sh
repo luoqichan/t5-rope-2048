@@ -30,10 +30,12 @@ initial_model=$DATA_PATH/models/t5-base-marco-documents-2048
 # train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-bkt
 # train_data=$train_data_folder/train.jsonl
 # valid_data=$train_data_folder/val.jsonl
-train_data=/compute/shire-1-6/luoqic/train.jsonl
-valid_data=/compute/shire-1-6/luoqic/val.jsonl 
+# train_data=/compute/shire-1-6/luoqic/train.jsonl
+# valid_data=/compute/shire-1-6/luoqic/val.jsonl 
+train_data=/compute/babel-4-7/luoqic/t5-rope-hncn-updated/train.jsonl
+valid_data=/compute/babel-4-7/luoqic/t5-rope-hncn-updated/val.jsonl
 
-trained_model_name=t5-base-marco-documents-2048-HNCN-separatelosses-debug-eval
+trained_model_name=t5-base-marco-documents-2048-HNCN-separatelosses-correcteddata
 output_path=$DATA_PATH/models/$trained_model_name
 
 accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 OpenMatch/src/openmatch/driver/train_dr.py  \
