@@ -69,11 +69,11 @@ class SimpleClusterLoss:
         hn_logits = torch.matmul(q, p.transpose(0, 1))
         hn_loss = F.cross_entropy(hn_logits, hn_target, reduction=reduction)
 
-        cn0_loss = self._get_cluster_loss(q, cn0, target_per_qry)
-        cn1_loss = self._get_cluster_loss(q, cn1, target_per_qry)
-        cn2_loss = self._get_cluster_loss(q, cn2, target_per_qry)
-        cn3_loss = self._get_cluster_loss(q, cn3, target_per_qry)
-        cn4_loss = self._get_cluster_loss(q, cn4, target_per_qry)
+        cn0_loss = self._get_cluster_loss(q, cn0, cn0.size(0) // q.size(0))
+        cn1_loss = self._get_cluster_loss(q, cn1, cn1.size(0) // q.size(0))
+        cn2_loss = self._get_cluster_loss(q, cn2, cn2.size(0) // q.size(0))
+        cn3_loss = self._get_cluster_loss(q, cn3, cn3.size(0) // q.size(0))
+        cn4_loss = self._get_cluster_loss(q, cn4, cn4.size(0) // q.size(0))
 
         loss = hn_loss + cn0_loss + cn1_loss + cn2_loss + cn3_loss + cn4_loss
 

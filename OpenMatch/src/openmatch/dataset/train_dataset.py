@@ -231,12 +231,12 @@ class BKTTrainDataset(TrainDatasetBase):
                 for neg in neg_psg:
                     encoded_passages.append(self.create_one_example(neg))
 
-        if not self.maxp and not self.fusion:
-            assert len(encoded_passages) == self.data_args.train_n_passages
-        elif self.maxp:
-            assert len(encoded_passages) == self.data_args.train_n_passages * self.maxp
-        elif self.fusion:
-            assert len(encoded_passages) == self.data_args.train_n_passages * self.fusion
+        # if not self.maxp and not self.fusion:
+        #     assert len(encoded_passages) == self.data_args.train_n_passages
+        # elif self.maxp:
+        #     assert len(encoded_passages) == self.data_args.train_n_passages * self.maxp
+        # elif self.fusion:
+        #     assert len(encoded_passages) == self.data_args.train_n_passages * self.fusion
         return(encoded_passages)
 
     def get_process_fn(self, epoch, hashed_seed):

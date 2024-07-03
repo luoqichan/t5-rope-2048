@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=full-run
+#SBATCH --job-name=trunc
 #SBATCH --exclude=babel-4-28,babel-3-19,babel-1-31
 #SBATCH --output=logs/%x-%j.out
 #SBATCH -e logs/%x-%j.err
@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=128G
 #SBATCH --gres=gpu:A6000:4
-#SBATCH --time=7-00:00:00
+#SBATCH --time=5-00:00:00
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
@@ -30,10 +30,10 @@ initial_model=$DATA_PATH/models/t5-base-marco-documents-2048
 # train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-bkt
 # train_data=$train_data_folder/train.jsonl
 # valid_data=$train_data_folder/val.jsonl
-train_data=/compute/babel-4-7/luoqic/t5-rope-hncn-updated/train.jsonl
-valid_data=/compute/babel-4-7/luoqic/t5-rope-hncn-updated/val.jsonl
+train_data=/compute/shire-1-6/luoqic/t5-rope-hncn-truncated/train.jsonl
+valid_data=/compute/shire-1-6/luoqic/t5-rope-hncn-truncated/val.jsonl
 
-trained_model_name=t5-base-marco-documents-2048-HNCN-separatelosses-correcteddata
+trained_model_name=t5-base-marco-documents-2048-HNCN-separatelosses-truncated-debug
 output_path=$DATA_PATH/models/$trained_model_name
 
 accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 OpenMatch/src/openmatch/driver/train_dr.py  \
@@ -41,7 +41,7 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --model_name_or_path $initial_model \
     --do_train \
     --save_steps 125  \
-    --eval_steps 125  \
+    --eval_steps 125 \
     --save_total_limit 2 \
     --fp16 \
     --train_path $train_data  \

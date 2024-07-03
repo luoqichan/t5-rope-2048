@@ -106,15 +106,15 @@ class DRModel(nn.Module):
         }
         return config
     
-    def _get_cluster_loss(self, q_reps, p_reps):
+    def _get_cluster_loss(self, q_reps, p_reps, target_per_query):
         """ No in-batch negatives for cluster
         """
         bs = q_reps.shape[0]
 
         all_scores = []
         for i in range(bs):
-            start_idx = i * self.data_args.train_n_passages
-            end_idx = start_idx + self.data_args.train_n_passages
+            start_idx = i * target_per_query
+            end_idx = start_idx + target_per_query
             score = q_reps[i] @ p_reps[start_idx:end_idx].T
             all_scores.append(score)
 
@@ -124,7 +124,7 @@ class DRModel(nn.Module):
                              device=all_scores.device,
                              dtype=torch.long)
 
-        loss = self.loss_fn(all_scores, target)
+        loss = F.cross_entropy(all_scores, target)
         return loss
 
 
@@ -221,11 +221,11 @@ class DRModel(nn.Module):
 
             hn_loss = self.loss_fn(scores, target)
 
-            cn0_loss = self._get_cluster_loss(q_reps, cn0_reps)
-            cn1_loss = self._get_cluster_loss(q_reps, cn1_reps)
-            cn2_loss = self._get_cluster_loss(q_reps, cn2_reps)
-            cn3_loss = self._get_cluster_loss(q_reps, cn3_reps)
-            cn4_loss = self._get_cluster_loss(q_reps, cn4_reps)
+            cn0_loss = self._get_cluster_loss(q_reps, cn0_reps, cn0_reps.size(0) // q_reps.size(0))
+            cn1_loss = self._get_cluster_loss(q_reps, cn1_reps, cn1_reps.size(0) // q_reps.size(0))
+            cn2_loss = self._get_cluster_loss(q_reps, cn2_reps, cn2_reps.size(0) // q_reps.size(0))
+            cn3_loss = self._get_cluster_loss(q_reps, cn3_reps, cn3_reps.size(0) // q_reps.size(0))
+            cn4_loss = self._get_cluster_loss(q_reps, cn4_reps, cn4_reps.size(0) // q_reps.size(0))
 
             loss_components = torch.tensor(
                                         [[hn_loss, cn0_loss, cn1_loss, cn2_loss, cn3_loss, cn4_loss]], 
