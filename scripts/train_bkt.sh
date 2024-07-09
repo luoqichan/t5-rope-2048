@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=train_dr_openmatch
+#SBATCH --job-name=train_bkt_intercept
 #SBATCH --output=logs/%x-%j.out
 #SBATCH -e logs/%x-%j.err
 #SBATCH --exclude=babel-4-28
@@ -15,7 +15,7 @@ conda activate openmatch
 mkdir -p /scratch/luoqic
 
 DATA_PATH="/data/user_data/luoqic/t5-rope-data"
-export WANDB_PROJECT=t5-rope-bkt-debug
+export WANDB_PROJECT=t5-rope-bkt_hncn_intercept
 
 
 split=documents
@@ -29,13 +29,11 @@ corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
 negatives=$DATA_PATH/data/marco_documents_processed/train.negatives.tsv
 
 initial_model=$DATA_PATH/models/t5-base-marco-documents-2048
-trained_model_name=t5-base-marco-$split-$text_length-HNCN-separatelosses-hn1data
+trained_model_name=t5-base-marco-$split-$text_length-bkt_hncn_intercept
 
-# train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-self-hn-1
-# train_data=$train_data_folder/train.jsonl
-# valid_data=$train_data_folder/val.jsonl
-train_data=/compute/babel-4-7/luoqic/t5-rope-hncn-updated/train.jsonl
-valid_data=/compute/babel-4-7/luoqic/t5-rope-hncn-updated/val.jsonl
+train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-bkt_hncn_intersect
+train_data=$train_data_folder/train.jsonl
+valid_data=$train_data_folder/val.jsonl
 
 output_path=$DATA_PATH/models/$trained_model_name
 
@@ -45,7 +43,6 @@ accelerate launch --num_processes $n_gpus --multi_gpu --main_process_port 29777 
     --save_total_limit 2 \
     --do_train \
     --save_steps 125  \
-    --max_steps 2 \
     --eval_steps 125  \
     --fp16 \
     --train_path $train_data  \
