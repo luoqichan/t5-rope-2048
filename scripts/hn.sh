@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=cluster_negs
+#SBATCH --job-name=hncn_build
 #SBATCH --output=logs/%x-%j.out
 #SBATCH -e logs/%x-%j.err
 #SBATCH --partition=long
@@ -21,14 +21,14 @@ train_qrels=$DATA_PATH/data/marco_documents_processed/qrels.train.tsv
 train_queries=$DATA_PATH/data/marco_documents_processed/train.query.txt
 corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
 
-train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-bkt
+train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-bkt_hncn_intersect
 model_path=/data/user_data/luoqic/t5-rope-data/models/t5-base-marco-documents-2048
 
 mkdir -p $train_data_folder
 
 python OpenMatch/scripts/msmarco/build_hn.py  \
     --tokenizer_name $model_path \
-    --hn_file $DATA_PATH/data/negatives/t5-base-marco-documents-2048-bkt/combined_negatives.txt \
+    --hn_file /data/user_data/luoqic/bkt-cluster/experiments/intersect/combined.txt \
     --qrels $train_qrels \
     --queries $train_queries  \
     --collection $corpus  \
