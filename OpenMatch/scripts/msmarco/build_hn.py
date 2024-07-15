@@ -36,6 +36,100 @@ def load_ranking(rank_file, relevance, n_sample, depth, split_token):
                 yield curr_q, relevance[curr_q], negatives[:n_sample], split_token
                 return
 
+def sample_across_clusters(negatives:dict, n_samples:int):
+
+    sample_distr = {5: [2, 2, 2, 2, 1], 4:[3, 2, 2, 2], 3: [3, 3, 3], 2:[5, 4], 1:[9]}
+
+    sampled_negatives = []
+    keys = list(negatives.keys())
+    num_levels = len(keys)
+
+    gold = False
+    if 'gold_leaf' in keys:
+        keys.remove('gold_leaf')
+        gold = True
+    keys = sorted(keys, reverse=True)
+    if gold: 
+        keys.append('gold_leaf')
+
+    overflow = 0
+
+    distr = sample_distr[num_levels]
+    unsampled_pool = []
+
+    for enum, k in enumerate(keys): 
+        num_to_sample = distr[enum] + overflow
+        overflow = 0
+
+        if len(negatives[k]) < num_to_sample:
+            sampled_negatives += negatives[k]
+            overflow += (int(distr[enum]) - len(negatives[k]))
+
+        else:
+            random.shuffle(negatives[k])
+            sampled_negatives += (negatives[k][:num_to_sample])
+
+            unsampled_pool += negatives[k][num_to_sample:]
+
+    if len(sampled_negatives) < n_samples: 
+        
+        needed = n_samples - len(sampled_negatives)
+        random.shuffle(unsampled_pool)
+        sampled_negatives += unsampled_pool[:needed]
+
+    assert len(sampled_negatives) == n_samples
+    return sampled_negatives 
+
+def load_ranking_with_cluster_distr(rank_file, relevance, n_sample, depth, split_token):
+    with open(rank_file) as rf:
+        neg_count = 0
+        lines = iter(rf)
+        q_0, p_0, _, level_0 = next(lines).strip().split()
+
+        curr_q = q_0
+        
+        if p_0 in relevance[q_0]:
+            negatives = {}
+        else: 
+            negatives = {}
+            negatives[level_0] = [p_0]
+            neg_count += 1
+
+        while True:
+            try:
+                q, p, _, level = next(lines).strip().split()
+
+                if neg_count == depth:
+                    # select negatives from limited top-n! 
+
+                    sampled_negatives = sample_across_clusters(negatives, n_sample)
+                    neg_count = -1000
+                    yield curr_q, relevance[curr_q], sampled_negatives, split_token
+
+
+                if q != curr_q:
+                    # reset for next query
+                    neg_count = 0
+                    curr_q = q
+                    if p_0 in relevance[q_0]:
+                        negatives = {}
+                    else: 
+                        negatives[level] = [p_0]
+                        neg_count += 1
+
+                else:
+                    if p not in relevance[q]:
+                        if level not in negatives: 
+                            negatives[level] = [p]
+                        else: 
+                            negatives[level].append(p)
+                        neg_count += 1
+                            
+            except StopIteration:
+                sampled_negatives = sample_across_clusters(negatives, n_sample)
+                yield curr_q, relevance[curr_q], sampled_negatives, split_token
+                return
+
 
 random.seed(datetime.now())
 parser = ArgumentParser()
@@ -79,7 +173,9 @@ shard_id = 0
 f = None
 os.makedirs(args.save_to, exist_ok=True)
 
-pbar = tqdm(load_ranking(args.hn_file, qrel, args.n_sample, args.depth, args.split_sentences))
+# pbar = tqdm(load_ranking(args.hn_file, qrel, args.n_sample, args.depth, args.split_sentences))
+pbar = tqdm(load_ranking_with_cluster_distr(args.hn_file, qrel, args.n_sample, args.depth, args.split_sentences))
+
 with Pool() as p:
     for x in p.imap(processor.process_one, pbar, chunksize=args.mp_chunk_size):
         counter += 1
