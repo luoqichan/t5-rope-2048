@@ -1,11 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=build_hn
+#SBATCH --job-name=hncn_build
 #SBATCH --output=logs/%x-%j.out
 #SBATCH -e logs/%x-%j.err
 #SBATCH --partition=long
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=128G
-#SBATCH --time=8:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=256G
+#SBATCH --gres=gpu:A6000:2
+#SBATCH --time=1-00:00:00
 
 eval "$(conda shell.bash hook)"
 conda activate openmatch
@@ -23,18 +24,15 @@ corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
 train_data_folder=$DATA_PATH/data/training_data/t5-base-marco-documents-2048-bkt_hncn_ranked_intersect
 model_path=/data/user_data/luoqic/t5-rope-data/models/t5-base-marco-documents-2048
 
-train_data_folder=$DATA_PATH/data/training_data/$trained_model_name
-train_data=$train_data_folder/train.jsonl
-valid_data=$train_data_folder/val.jsonl
-run_save=$DATA_PATH/data/negatives/$trained_model_name
+mkdir -p $train_data_folder
 
 python OpenMatch/scripts/msmarco/build_hn.py  \
-    --tokenizer_name $output_path \
-    --hn_file /data/user_data/luoqic/bkt-cluster/experiments/intersect/combined_ranked.txt \
+    --tokenizer_name $model_path \
+    --hn_file /data/user_data/luoqic/bkt-cluster/experiments/intersect/combined.txt \
     --qrels $train_qrels \
     --queries $train_queries  \
     --collection $corpus  \
-    --save_to $train_data_folder  \
+    --save_to $train_data_folder \
     --doc_template "Title: <title> Text: <text>" \
     --n_sample 9 \
     --truncate $text_length
@@ -50,6 +48,3 @@ echo $n_train
 
 tail -n $n_val $train_data_folder/full.jsonl > $train_data_folder/val.jsonl
 head -n $n_train $train_data_folder/full.jsonl > $train_data_folder/train.jsonl
-
-rm $train_data_folder/full.jsonl
-
