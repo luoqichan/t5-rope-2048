@@ -38,7 +38,7 @@ def load_ranking(rank_file, relevance, n_sample, depth, split_token):
 
 def sample_across_clusters(negatives:dict, n_samples:int):
 
-    sample_distr = {5: [2, 2, 2, 2, 1], 4:[3, 2, 2, 2], 3: [3, 3, 3], 2:[5, 4], 1:[9]}
+    sample_distr = {6: [2, 2, 2, 1, 1, 1], 5: [2, 2, 2, 2, 1], 4:[3, 2, 2, 2], 3: [3, 3, 3], 2:[5, 4], 1:[9]}
 
     sampled_negatives = []
     keys = list(negatives.keys())
@@ -99,15 +99,18 @@ def load_ranking_with_cluster_distr(rank_file, relevance, n_sample, depth, split
             try:
                 q, p, _, level = next(lines).strip().split()
 
-                if neg_count == depth:
-                    # select negatives from limited top-n! 
+                # if neg_count == depth:
+                #     # select negatives from limited top-n! 
+                #     sampled_negatives = sample_across_clusters(negatives, n_sample)
+                #     neg_count = -1000
+                #     yield curr_q, relevance[curr_q], sampled_negatives, split_token
+
+
+                if q != curr_q:
 
                     sampled_negatives = sample_across_clusters(negatives, n_sample)
                     neg_count = -1000
                     yield curr_q, relevance[curr_q], sampled_negatives, split_token
-
-
-                if q != curr_q:
                     # reset for next query
                     neg_count = 0
                     curr_q = q

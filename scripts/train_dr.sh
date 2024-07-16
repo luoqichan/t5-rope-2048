@@ -25,7 +25,7 @@ corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
 negatives=$DATA_PATH/data/marco_documents_processed/train.negatives.tsv
 
 initial_model=$1
-trained_model_name=t5-base-marco-$split-$text_length-self-hn-1-self-hn-2
+trained_model_name=t5-base-marco-$split-$text_length-warmup2k
 
 train_data_folder=$DATA_PATH/data/training_data/$trained_model_name
 mkdir -p $train_data_folder

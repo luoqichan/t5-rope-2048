@@ -28,7 +28,7 @@ mkdir -p $train_data_folder
 
 python OpenMatch/scripts/msmarco/build_hn.py  \
     --tokenizer_name $model_path \
-    --hn_file /data/user_data/luoqic/bkt-cluster/experiments/intersect/combined.txt \
+    --hn_file /data/user_data/luoqic/bkt-cluster/experiments/intersect/combined_ranked.txt \
     --qrels $train_qrels \
     --queries $train_queries  \
     --collection $corpus  \
