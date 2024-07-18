@@ -12,6 +12,6 @@ conda activate openmatch
 
 DATA_PATH="/data/user_data/luoqic/t5-rope-data"
 dev_qrels=$DATA_PATH/data/marco_documents_processed/qrels.dev.tsv
-run_save=/data/user_data/luoqic/bkt-cluster/experiments/t5-base-marco-documents-2048-bkt_hncn_intercept
+run_save=/data/user_data/luoqic/bkt-cluster/experiments/t5-base-marco-documents-2048-warmup74
 
 python OpenMatch/scripts/evaluate.py $dev_qrels $run_save/dev.trec > $run_save/dev.results

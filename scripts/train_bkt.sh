@@ -26,7 +26,6 @@ n_gpus=4
 train_qrels=$DATA_PATH/data/marco_documents_processed/qrels.train.tsv
 train_queries=$DATA_PATH/data/marco_documents_processed/train.query.txt
 corpus=$DATA_PATH/data/marco_documents_processed/corpus_firstp_2048.tsv
-negatives=$DATA_PATH/data/marco_documents_processed/train.negatives.tsv
 
 initial_model=$DATA_PATH/models/t5-base-marco-documents-2048
 trained_model_name=t5-base-marco-$split-$text_length-bkt_hncn_ranked_intercept
